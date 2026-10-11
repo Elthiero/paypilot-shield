@@ -1,26 +1,24 @@
-import { Link, Route, Routes } from "react-router-dom";
-import Login from "./pages/Login";
+import { Navigate, Route, Routes } from "react-router-dom";
+import Shell from "./components/Shell";
+import { isLoggedIn } from "./hooks/useAuth";
 import AgentChat from "./pages/AgentChat";
 import Approvals from "./pages/Approvals";
 import Invoices from "./pages/Invoices";
-import Suppliers from "./pages/Suppliers";
+import Login from "./pages/Login";
 import Payments from "./pages/Payments";
-import Replay from "./pages/Replay";
 import Policy from "./pages/Policy";
+import Replay from "./pages/Replay";
+import Suppliers from "./pages/Suppliers";
+
+function Guard() {
+  return isLoggedIn() ? <Shell /> : <Navigate to="/login" replace />;
+}
 
 export default function App() {
   return (
-    <div style={{ fontFamily: "system-ui", padding: 16 }}>
-      <nav style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-        <Link to="/">Agent</Link>
-        <Link to="/policy">Policy</Link>
-        <Link to="/approvals">Approvals</Link>
-        <Link to="/payments">Payments</Link>
-        <Link to="/invoices">Invoices</Link>
-        <Link to="/suppliers">Suppliers</Link>
-      </nav>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<Guard />}>
         <Route path="/" element={<AgentChat />} />
         <Route path="/policy" element={<Policy />} />
         <Route path="/approvals" element={<Approvals />} />
@@ -28,7 +26,8 @@ export default function App() {
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/replay/:id" element={<Replay />} />
-      </Routes>
-    </div>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

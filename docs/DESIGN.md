@@ -281,7 +281,7 @@ Use step blocks (6.7) stacked with 12px gaps, tab colors cycling `blue`, `yellow
 
 ### 7.5 Chat screen
 - Main column: Section tag "chat", the thread (bubbles 6.8), starter chips, then the input row (input plus Primary Send).
-- Right column (380px): Section tag "what the agent did", step blocks for each tool call, then the decision card for `submit_payment_request`, then a Gaegu line "the agent can only request payments".
+- Right column (380px): Section tag "what the agent did", the decision card for `submit_payment_request` first (so the verdict is visible without scrolling), then step blocks for each tool call. At 1100px and wider the column sticks under the nav and scrolls on its own if it is taller than the screen. The Gaegu line "the agent can only request payments" sits under the chat input.
 - `aria-live="polite"` on the thread.
 
 ## 8. Motion

@@ -3,7 +3,7 @@
 Audience: Elthiero, Alain, and Claude Code while building the web app.
 Companion file: `docs/DESIGN.md` (visual language, written after the reference images). This file says what to build and how. DESIGN.md says how it should look.
 
-Status legend used below: **LIVE** means the endpoint exists in the repo today. **PLANNED** means it is part of Layer 2 or a small addition, and the contract below is the proposal both sides build against. Change a PLANNED contract only by editing this file in the same pull request.
+Status legend used below: **LIVE** means the endpoint exists in the repo today and is tested. Change a contract only by editing this file in the same pull request.
 
 ---
 
@@ -148,46 +148,49 @@ Enums used in the UI:
 - Invoice status: `PENDING`, `AWAITING_APPROVAL`, `SENT`, `PAID`, `BLOCKED`
 - Transaction status: `PENDING`, `SUCCESS`, `DENIED` and other PayPal values. Treat unknown values as neutral chips, never crash
 
-### 5.2 PLANNED endpoints (Layer 2 plus two small additions)
-
-These routers exist as empty stubs (`mandates.py`, `approvals.py`, `webhooks.py`). Build the UI against these contracts and use mock data until the backend lands.
+### 5.2 Layer 2 endpoints (LIVE, built and tested)
 
 **Keys**
 | Method | Path | Body / Response |
 |---|---|---|
-| POST | `/auth/public-key` | Body `{ public_key }` (JWK JSON string of the ECDSA public key). Stores it on the user. Returns `{ ok: true }`. Called once after the browser creates its keypair |
+| POST | `/auth/register-key` | Body `{ public_key }`: base64 of the SPKI DER public key (`exportKey("spki")`). 400 if it is not a P-256 key. Returns `{ ok: true }`. Registering a different key deactivates the active policy, because its signature no longer matches |
 
-**Policy (mandate)**
+**Policy (mandate)**. Flow: prepare, sign in the browser, activate.
 | Method | Path | Body / Response |
 |---|---|---|
-| GET | `/mandates/current` | Active signed policy: `{ id, rules, policy_text, payload, signature, valid_until, active, verified }` or `null` when none |
-| POST | `/mandates/draft` | Body `{ policy_text }` (plain language such as "Auto pay up to 500, budget 5000 a month"). The LLM or a rule parser drafts values. Returns `{ rules, payload }` where `rules` matches the Rules type and `payload` is the exact string the browser must sign. Nothing is saved |
-| POST | `/mandates` | Body `{ rules, policy_text, payload, signature }`. Server rebuilds the payload from `rules`, checks it equals `payload`, verifies the signature with the stored public key, then activates it. Returns the saved mandate. 400 on mismatch, 422 on invalid rules |
-| GET | `/mandates` | History of mandates, newest first |
-| GET | `/mandates/{id}/verify` | Re-verifies the stored signature. Returns `{ valid: boolean, reason }`. Used by the Policy page badge and the tamper demo |
-| POST | `/mandates/{id}/tamper` | Demo only, available when `APP_ENV != production`. Changes one stored byte of the rules so the signature no longer matches. Returns `{ ok: true }` |
+| POST | `/mandates/prepare` | Body `{ policy_text, rules }`. Needs a registered key. 422 if `valid_until` is past. Saves an inactive mandate and returns `{ mandate_id, payload }`. `payload` is the exact string to sign (it contains a server nonce, so never rebuild it) |
+| POST | `/mandates/{id}/sign` | Body `{ signature }` (base64 of the raw 64 byte r\|\|s). Verifies, activates, deactivates older policies. Returns the mandate. 400 `Signature invalid` |
+| GET | `/mandates/active` | The active, unexpired mandate or `null`: `{ id, policy_text, rules, payload, signature, active, verified, valid_until }`. `verified` is false when the stored signature no longer matches |
+| GET | `/mandates` | History of signed mandates, newest first, same shape |
+| GET | `/mandates/{id}/verify` | `{ valid, reason }` |
+| POST | `/dev/mandates/{id}/tamper` | Development only (`APP_ENV=development`). Raises the signed auto limit tenfold without re-signing. `verify` then returns `valid: false` and every payment is refused with `Policy signature invalid` |
+| POST | `/dev/invoices/{number}` (PATCH) | Development only. Body `{ amount?, payee_email? }`. Changes the live invoice to demo the "changed after evaluation" refusal |
 
-Rules type (matches `schemas.Rules`):
+Rules type (matches `schemas.Rules`). Decimals travel as strings in the signed payload, but the form can send numbers:
 ```ts
-type Rules = { auto_limit: number; currency: string; monthly_budget: number;
+type Rules = { auto_limit: number | string; currency: string; monthly_budget: number | string;
                require_verified: boolean; valid_until: string /* ISO date */ };
 ```
+`POST /mandates/draft` (LLM drafting) is NOT built. The Policy page edits the rules form directly. Add a Draft button later without changing the flow.
 
 **Approvals**
 | Method | Path | Body / Response |
 |---|---|---|
-| GET | `/approvals` | Pending items: `[{ payment_request_id, invoice, supplier, amount, currency, payee_email, reasons[], risk, created_at, cart_payload }]`. `cart_payload` is the exact string to sign |
-| POST | `/approvals/{pr_id}/approve` | Body `{ signature }` (base64 of the 64 byte raw r||s signature over `cart_payload`). Server converts to DER, verifies, runs the payout. Returns the same summary shape as the pipeline: `{ ok, payment_request_id, status, decision, transaction }`. 400 if signature invalid |
-| POST | `/approvals/{pr_id}/reject` | Body `{ note? }`. Marks the request rejected, logs an audit event. Returns `{ ok: true, status }` |
+| GET | `/approvals` | Pending: `[{ id, invoice, supplier, amount, currency, risk, reasons[], cart_payload, created_at }]`. `id` is the payment request id. `cart_payload` is the exact string to sign. It holds the payee email, invoice hash and an `expires_at` 24 hours ahead |
+| POST | `/approvals/{id}/approve` | Body `{ signature }` over `cart_payload`. 400 `Signature invalid` (the request stays open), 409 if not awaiting or expired. Runs the verifier and the payout. Returns the pipeline summary. A refusal comes back as `status: "BLOCKED"` with the failures in `reasons` |
+| POST | `/approvals/{id}/reject` | Body `{ reason? }`. Sets `REJECTED`, returns the summary |
 
-**Payments (small addition)**
+**Payments**
 | Method | Path | Body / Response |
 |---|---|---|
-| POST | `/payments` | Body `{ invoice_number }`. Calls the same pipeline the agent uses, so the Invoices page can offer "Request payment" without going through chat. Returns the pipeline summary. It still cannot skip any check |
-| GET | `/payments/{pr_id}` | One request with its decision, reasons, linked invoice and transaction. Used by Replay for the header |
+| POST | `/payments` | Body `{ invoice_number }`. Same pipeline the agent uses. Returns the pipeline summary |
+| GET | `/payments/{pr_id}` | Summary plus `supplier`, `currency`, `created_at`. Used by Replay for the header |
 
-**Webhook (not called by the frontend)**
-`POST /webhooks/paypal` receives PayPal payout events. The frontend only sees the result: transaction status changes after `Refresh`.
+Pipeline summary shape: `{ ok, payment_request_id, invoice, amount, decision, risk, reasons[], status, transaction: { id, status, payout_batch_id, paypal_txn_id } | null, note? }`.
+
+Extra statuses the UI must handle: `REJECTED`, `EXPIRED`, `FAILED` (see DESIGN.md 2.4).
+
+**Webhook (not built, not called by the frontend).** `POST /webhooks/paypal` is a stub. Transaction status changes after `Refresh`.
 
 ## 6. TypeScript types (`src/lib/types.ts`)
 
@@ -215,13 +218,15 @@ export interface AgentToolCall { tool: string; input?: Record<string, unknown>; 
 export interface AgentReply { reply: string; payment_request_id?: number | null;
   mode: "rules" | "llm" | "rules_fallback"; trace: AgentToolCall[]; }
 
-export interface Rules { auto_limit: number; currency: string; monthly_budget: number;
+export interface Rules { auto_limit: number | string; currency: string; monthly_budget: number | string;
   require_verified: boolean; valid_until: string; }
 export interface Mandate { id: number; rules: Rules; policy_text: string; payload: string;
-  signature: string | null; valid_until: string | null; active: boolean; verified?: boolean; }
-export interface ApprovalItem { payment_request_id: number; invoice: string; supplier: string;
-  amount: number; currency: string; payee_email: string; reasons: string[]; risk: Risk;
-  created_at: string; cart_payload: string; }
+  signature: string | null; valid_until: string | null; active: boolean; verified: boolean; }
+export interface ApprovalItem { id: number; invoice: string; supplier: string; amount: number;
+  currency: string; reasons: string[]; risk: Risk; created_at: string; cart_payload: string; }
+export interface PaymentSummary { ok: boolean; payment_request_id: number; invoice: string; amount: number;
+  decision: Decision; risk: Risk; reasons: string[]; status: string; note?: string;
+  transaction: { id: number; status: string; payout_batch_id: string | null; paypal_txn_id: string | null } | null; }
 ```
 
 ## 7. Screens: what to build and how
@@ -230,7 +235,7 @@ For every screen: layout and look come from DESIGN.md. Below is behavior, data, 
 
 ### 7.1 Login (`/login`)
 - Form: email, password, submit. Prefill nothing in production. In development a hint line can show the demo email.
-- On submit call `POST /auth/login`. Store `token` in `sessionStorage`. After success, call `ensureKeypair()` then `POST /auth/public-key` once if the user has no registered key (store a `keyRegistered` flag in `localStorage`).
+- On submit call `POST /auth/login`. Store `token` in `sessionStorage`. After success, call `ensureKeypair()` then `POST /auth/register-key` once if the user has no registered key (store a `keyRegistered` flag in `localStorage`).
 - States: submitting (disable button), error (show `detail`).
 - Accept: wrong password shows "Wrong email or password"; success lands on `/`.
 
@@ -246,7 +251,7 @@ For every screen: layout and look come from DESIGN.md. Below is behavior, data, 
 ### 7.3 Invoices (`/invoices`)
 - AG Grid with columns: Number, Supplier, Verified (icon), Amount, Status (StatusBadge), Payee email.
 - Row click opens a side drawer with full details. The description is shown inside a visibly marked "Untrusted invoice text" box, to teach judges that it is treated as data.
-- Button "Request payment" in the drawer calls `POST /payments` (PLANNED). Until it exists, the button sends "Pay INV-xxx" through `/agent/chat`.
+- Button "Request payment" in the drawer calls `POST /payments`.
 - Highlight rows whose `payee_email` differs from the supplier's `last_payout_email` (needs a supplier lookup). This is the INV-005 story.
 - Accept: five seeded invoices render, filter by status works.
 
@@ -265,15 +270,15 @@ Two tabs.
 - Each card shows invoice, supplier, amount, payee email, risk, and every reason in plain words. A collapsible "What you are signing" shows `cart_payload` exactly.
 - **Approve** flow: `ensureKeypair()` then `signPayload(cart_payload)` then `POST /approvals/{id}/approve` with the signature. Disable the button while pending. On success show the resulting status and a link to Replay.
 - **Reject** flow: optional note, `POST /approvals/{id}/reject`.
-- Errors: 400 invalid signature shows "The signature did not verify. Re-register your key". If the browser has no key (IndexedDB cleared), offer "Create new key" which calls `ensureKeypair()` and `POST /auth/public-key`.
+- Errors: 400 invalid signature shows "The signature did not verify. Re-register your key". If the browser has no key (IndexedDB cleared), offer "Create new key" which calls `ensureKeypair()` and `POST /auth/register-key`.
 - Accept: INV-003 ($1,500) appears here after the agent is asked to pay it, and approving it creates a payout.
 
 ### 7.7 Policy (`/policy`)
-- Shows the active signed policy (rules in readable form), a **Verified** or **Signature invalid** badge from `GET /mandates/{id}/verify`, and valid_until.
-- Editor: a text box "Describe your policy in plain words" and a **Draft** button (`POST /mandates/draft`). The returned `rules` populate a form (auto limit, monthly budget, require verified suppliers, valid until). The owner can edit every field.
-- **Review and sign** shows a diff against the current policy, then signs `payload` with the browser key and calls `POST /mandates`.
+- Shows the active signed policy (rules in readable form), a **Verified** or **Signature invalid** badge from `verified` on `GET /mandates/active` (or `GET /mandates/{id}/verify`), and valid_until.
+- Editor: a rules form pre-filled with the current policy. (A plain language Draft button via `POST /mandates/draft` is optional and not built yet.) The form holds (auto limit, monthly budget, require verified suppliers, valid until). The owner can edit every field.
+- **Review and sign** shows a diff against the current policy, calls `POST /mandates/prepare`, signs the returned `payload` with the browser key and calls `POST /mandates/{id}/sign`.
 - The AI-drafted values are labeled "Drafted by AI, not active until you sign".
-- Tamper demo (development and demo builds only): button "Simulate tampering" calls `POST /mandates/{id}/tamper`, then the page reloads the verify badge, which flips to invalid, and a banner states that all payments are now stopped until the owner signs a new policy.
+- Tamper demo (development and demo builds only): button "Simulate tampering" calls `POST /dev/mandates/{id}/tamper`, then the page reloads the verify badge, which flips to invalid, and a banner states that all payments are now stopped until the owner signs a new policy.
 - Accept: sign, refresh, badge stays valid; tamper turns the badge invalid; paying any invoice is then refused.
 
 ### 7.8 Replay (`/replay/:id`)
@@ -298,8 +303,8 @@ export async function ensureKeypair(): Promise<CryptoKeyPair> {
 }
 
 export async function exportPublicKey(pair: CryptoKeyPair): Promise<string> {
-  const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
-  return JSON.stringify(jwk);
+  const spki = await crypto.subtle.exportKey("spki", pair.publicKey);   // the server loads SPKI DER only
+  return btoa(String.fromCharCode(...new Uint8Array(spki)));
 }
 
 export async function signPayload(payload: string): Promise<string> {
@@ -347,7 +352,7 @@ The current helper throws `Error("401 {...}")`. Replace with:
 5. Polish pass using DESIGN.md: empty and error states, responsive checks, demo data path.
 6. Feature freeze on 3 Nov: only bug fixes after that.
 
-Suggested split: Alain takes steps 1, 2 and 5. Elthiero takes the Layer 2 backend and steps 3 and 4. Agree on the PLANNED contracts above first so both sides can work in parallel.
+Suggested split: Alain takes steps 1, 2 and 5. Elthiero takes the Layer 2 backend and steps 3 and 4. The contracts above are live, so both sides can work in parallel.
 
 ## 13. Demo path the UI must support end to end
 
@@ -366,5 +371,5 @@ Suggested split: Alain takes steps 1, 2 and 5. Elthiero takes the Layer 2 backen
 ## 15. Open items
 
 - DESIGN.md (visual language) is written after the reference images are provided.
-- PLANNED endpoint contracts must be confirmed when the Layer 2 backend starts.
+- `POST /mandates/draft` (plain language policy drafting) is not built.
 - Decide whether `/mandates/draft` uses the LLM or a rule parser first (the LLM is optional, the rule parser is the fallback).

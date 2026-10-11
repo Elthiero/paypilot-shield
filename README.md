@@ -59,7 +59,7 @@ Business email compromise and fake invoices cost companies billions every year. 
 | Trust and decision | Truth check, decision, signed policy, verifier | Plain Python, `cryptography` |
 | Data and integrations | Invoices, suppliers, transactions, audit events, PayPal | PostgreSQL, SQLAlchemy, PayPal Payouts sandbox |
 
-More detail: [docs/architecture.md](docs/architecture.md) and [docs/layer1.md](docs/layer1.md).
+More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md) and [docs/layer2.md](docs/layer2.md).
 
 ## Project status
 
@@ -135,6 +135,10 @@ Log in at `/docs` with `DEMO_EMAIL` and `DEMO_PASSWORD`, click **Authorize**, th
 ```
 
 Other messages to try: `Pay INV-003`, `Pay INV-004`, `Pay INV-005`, `Why INV-005?`, `List invoices`.
+
+Nothing is paid until the owner has signed a policy. In the web app open **Policy**, then **Review and sign**. Without the frontend, run `python ../scripts/sign_policy.py` from `backend/`. Payments above the auto limit wait on the **Approvals** page, where the owner signs the exact payment.
+
+**Test aids (development only).** With `APP_ENV=development` the backend also mounts `PATCH /dev/invoices/{number}` (change an invoice amount or payee after it was evaluated) and `POST /dev/mandates/{id}/tamper` (break the signed policy). They exist to demo that the verifier refuses tampered data, and they never touch PayPal. They are not mounted in any other environment.
 
 ## Configuration
 
