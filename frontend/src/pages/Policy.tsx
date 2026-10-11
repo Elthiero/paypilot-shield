@@ -70,7 +70,9 @@ export default function Policy() {
 
   const reset = async () => {
     try {
-      await resetKey();
+      const password = window.prompt("Enter your password to replace the signing key");
+      if (!password) return;
+      await resetKey(password);
       setNotice({ kind: "info", text: "New signing key created. Sign the policy again." });
       reloadAll();
     } catch (e) {

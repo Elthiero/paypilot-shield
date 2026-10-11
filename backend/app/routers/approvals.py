@@ -49,6 +49,13 @@ def approve(pr_id: int, body: SignIn, user: User = Depends(current_user), db: Se
         raise HTTPException(status_code=409, detail="Approval expired. Submit the invoice again.")
     if not user.public_key or not verify_signature(user.public_key, pr.cart_payload, body.signature):
         raise HTTPException(status_code=400, detail="Signature invalid")  # request stays open for a retry
+    # Claim the request atomically so a double click cannot approve (and pay) twice
+    claimed = (db.query(PaymentRequest).filter(PaymentRequest.id == pr.id, PaymentRequest.status == "AWAITING_APPROVAL")
+               .update({"status": "APPROVING"}, synchronize_session=False))
+    if not claimed:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This request is already being approved")
+    db.refresh(pr)
     pr.cart_signature = body.signature
     audit(db, pr.id, "approved", {"user": user.email})
     execute_payout(db, pr, inv, get_paypal())

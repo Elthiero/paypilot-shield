@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -9,6 +9,8 @@ from ..models import Mandate, User
 from ..schemas import PrepareIn, SignIn
 from ..services.audit import audit
 from ..services.mandate import build_mandate_payload, signed_rules, verify_signature
+
+MAX_POLICY_DAYS = 366
 
 router = APIRouter(prefix="/mandates", tags=["mandates"], dependencies=[Depends(current_user)])
 
@@ -34,9 +36,12 @@ def prepare(body: PrepareIn, user: User = Depends(current_user), db: Session = D
         raise HTTPException(status_code=422, detail="valid_until must be an ISO date")
     if until.date() < date.today():
         raise HTTPException(status_code=422, detail="valid_until is in the past")
+    if until.date() > date.today() + timedelta(days=MAX_POLICY_DAYS):
+        raise HTTPException(status_code=422, detail=f"valid_until is more than {MAX_POLICY_DAYS} days away")
     rules = body.rules.model_dump(mode="json")
     payload = build_mandate_payload(user.id, rules, body.policy_text)
     m = Mandate(user_id=user.id, policy_text=body.policy_text, rules=rules, payload=payload, valid_until=until)
+    db.query(Mandate).filter(Mandate.user_id == user.id, Mandate.signature.is_(None)).delete()  # drop old unsigned drafts
     db.add(m)
     db.commit()
     return {"mandate_id": m.id, "payload": payload}

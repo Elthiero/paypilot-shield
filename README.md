@@ -178,7 +178,7 @@ The suite uses the fake PayPal client and a temporary SQLite database, so it nee
 
 ## Deployment
 
-The repo includes a Render blueprint, [render.yaml](render.yaml), for the API and the static frontend. Connect the repository on Render, enter the secrets in the dashboard and deploy. Pushes to `main` redeploy automatically. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
+The target is a VPS behind nginx (see `docs/PLAN.md`). On any public server leave `APP_ENV` at its default (`production`): the API then refuses to start unless `JWT_SECRET` has at least 32 random characters and `DEMO_PASSWORD` at least 12, and the `/dev` tamper helpers are not mounted. Set `APP_ENV=development` only on your own machine. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
 
 ## Project structure
 

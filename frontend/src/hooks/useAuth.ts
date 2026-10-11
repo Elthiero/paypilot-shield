@@ -14,7 +14,7 @@ export async function login(email: string, password: string): Promise<void> {
   sessionStorage.setItem("token", r.token);
   sessionStorage.setItem("email", r.email);
   try {
-    await registerKey();  // same key again is a no-op on the server
+    await registerKey(password);  // same key again is a no-op on the server
   } catch { /* plain HTTP or blocked storage: signing screens explain it */ }
 }
 

@@ -10,7 +10,7 @@ RULES = {"auto_limit": "500", "currency": "USD", "monthly_budget": "5000", "requ
 def setup(client):
     h = login(client)
     priv, pub = make_key()
-    assert client.post("/auth/register-key", json={"public_key": pub}, headers=h).status_code == 200
+    assert client.post("/auth/register-key", json={"public_key": pub, "password": "test-pass"}, headers=h).status_code == 200
     return h, priv
 
 
@@ -53,7 +53,7 @@ def test_new_policy_replaces_old_and_new_key_deactivates(client):
         ids.append(p["mandate_id"])
     assert client.get("/mandates/active", headers=h).json()["id"] == ids[1]
     _, pub2 = make_key()
-    client.post("/auth/register-key", json={"public_key": pub2}, headers=h)
+    client.post("/auth/register-key", json={"public_key": pub2, "password": "test-pass"}, headers=h)
     assert client.get("/mandates/active", headers=h).json() is None
 
 

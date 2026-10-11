@@ -16,7 +16,7 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 | Frontend (Layer 4) | All 8 pages built and calling the real API. Needs the live URL, the base path deep link test and the polish checks |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
 | Webhook | Not built (stub). The manual Refresh button covers it |
-| Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned. `render.yaml` exists as the fallback |
+| Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned |
 
 ## 2. Gates (dates that must hold)
 
@@ -35,7 +35,7 @@ If a gate slips by more than 2 days, cut scope using section 8, do not push the 
 
 | Area | Owner | Reviewer |
 |---|---|---|
-| `backend/`, `scripts/`, `render.yaml`, deploy files | Elthiero | Alain |
+| `backend/`, `scripts/`, deploy files | Elthiero | Alain |
 | `frontend/` | Alain | Elthiero |
 | `docs/FRONTEND.md` API contract section | Elthiero proposes, both agree | Both |
 | `docs/DESIGN.md` | Alain | Elthiero |
@@ -108,7 +108,6 @@ Set this in `.github/CODEOWNERS`:
 - [x] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
 - [ ] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling
 - [ ] Deploy to the VPS: docker compose (backend and Postgres), nginx server block, certbot, `/paypilot/api` proxy, deploy workflow
-- [ ] Replace Render fallback only after the VPS has run 3 days cleanly
 - [ ] Seed and reset script for demo data (`python seed.py --reset`)
 
 **Alain (frontend)**
@@ -170,7 +169,7 @@ Rehearse this path every Friday starting 23 Oct, and record how long it takes (t
 2. LLM drafting of the policy (keep the rule parser)
 3. PayPal webhook (keep the manual Refresh button)
 4. Suppliers page (read only list is enough)
-5. VPS deploy (stay on Render)
+5. VPS deploy (run locally and record the demo from there)
 
 **Never cut:** the signed policy, the signed approval, the tamper test, the audit replay, the BLOCKED demo. They are the product.
 
@@ -181,7 +180,7 @@ Rehearse this path every Friday starting 23 Oct, and record how long it takes (t
 | Signature mismatch between browser and Python (raw vs DER, string differences) | Server builds the payload, browser signs it unchanged, write the cross check test first (Week 2, day 1) |
 | PayPal sandbox slow or down on demo day | Fake mode fallback, recorded video as backup, show Replay from stored data |
 | Backend and frontend drift | Contract rule in section 4, mocks, contract freeze on 18 Oct |
-| VPS problems late | Deploy early (Week 3), keep Render fallback until stable |
+| VPS problems late | Deploy early (Week 3), record the video from a local run as backup |
 | LLM provider rate limit or outage | Rules fallback already built and tested |
 | One person blocked | Daily sync, small pull requests, the other person unblocks the same day |
 | Scope creep | Feature freeze 3 Nov, cuts list in section 8 |

@@ -3,6 +3,7 @@ import tempfile
 
 _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{_tmp}/test.db"
+os.environ["APP_ENV"] = "development"  # mounts the dev tamper routes
 os.environ["PAYPAL_MODE"] = "fake"
 os.environ["LLM_API_KEY"] = ""
 os.environ["LLM_MODEL"] = ""
@@ -61,7 +62,9 @@ def spy():
 @pytest.fixture()
 def client(db):
     from fastapi.testclient import TestClient
+    from app.deps import login_limiter
     from app.main import app
+    login_limiter.clear()
     with TestClient(app) as c:
         yield c
 

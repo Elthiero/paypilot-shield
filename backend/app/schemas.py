@@ -1,40 +1,43 @@
 from decimal import Decimal
 from pydantic import BaseModel, Field
 
+MAX_POLICY_TEXT = 2000
+
 
 class Rules(BaseModel):
     # The LLM may only draft these values. The owner reviews and signs them.
     auto_limit: Decimal = Field(ge=0, le=100000)
-    currency: str = "USD"
+    currency: str = Field("USD", pattern=r"^[A-Z]{3}$")
     monthly_budget: Decimal = Field(ge=0, le=1000000)
     require_verified: bool = True
-    valid_until: str  # ISO date
+    valid_until: str = Field(max_length=10)  # ISO date
 
 
 class LoginIn(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=255)
+    password: str = Field(max_length=200)
 
 
 class ChatIn(BaseModel):
-    message: str
+    message: str = Field(max_length=2000)
 
 
 class KeyIn(BaseModel):
-    public_key: str  # base64 SPKI DER, P-256
+    public_key: str = Field(max_length=300)  # base64 SPKI DER, P-256
+    password: str | None = Field(None, max_length=200)  # required to replace an existing key
 
 
 class PrepareIn(BaseModel):
-    policy_text: str
+    policy_text: str = Field(max_length=MAX_POLICY_TEXT)
     rules: Rules
 
 
 class SignIn(BaseModel):
-    signature: str  # base64, 64 raw bytes
+    signature: str = Field(max_length=200)  # base64, 64 raw bytes
 
 
 class RejectIn(BaseModel):
-    reason: str = ""
+    reason: str = Field("", max_length=500)
 
 
 class TamperIn(BaseModel):
@@ -43,4 +46,4 @@ class TamperIn(BaseModel):
 
 
 class PaymentIn(BaseModel):
-    invoice_number: str
+    invoice_number: str = Field(max_length=50)

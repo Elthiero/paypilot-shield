@@ -2,7 +2,6 @@
 import hashlib
 import json
 import time
-import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -123,7 +122,7 @@ def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = Tr
         audit(db, pr.id, "verifier_failed", {"failures": failures, "paypal_called": False})
         return
     audit(db, pr.id, "verifier_passed", {"mandate_id": mandate.id})
-    batch_id = f"pp{pr.id}-{uuid.uuid4().hex[:10]}"  # unique per attempt, doubles as the idempotency key
+    batch_id = f"pp{pr.id}"  # one payout per request: PayPal refuses a second batch with the same id
     try:
         resp = paypal.send_payout(batch_id, pr.payee_email, Decimal(pr.amount), pr.currency,
                                   f"Invoice {inv.number}")
@@ -167,6 +166,14 @@ def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = Tr
             out = summarize(db, existing, inv)
             out["note"] = f"Invoice is already {inv.status}. No new request was created."
             return out
+
+    # Claim the invoice atomically so two simultaneous requests cannot both evaluate (and pay) it
+    claimed = (db.query(Invoice).filter(Invoice.id == inv.id, Invoice.status == inv.status)
+               .update({"status": "EVALUATING"}, synchronize_session=False))
+    if not claimed:
+        db.rollback()
+        return {"ok": False, "error": f"Invoice {inv.number} is being processed by another request. Try again."}
+    db.refresh(inv)
 
     pr = PaymentRequest(invoice_id=inv.id, invoice_hash=invoice_hash(inv), payee_email=inv.payee_email,
                         amount=inv.amount, currency=inv.currency, status="RECEIVED")

@@ -74,7 +74,7 @@ export default function Approvals() {
               <p><span className="label">Invoice</span> {signing.invoice} ({signing.supplier})</p>
               <p><span className="label">Amount</span> <span className="money font-bold">{money(signing.amount, signing.currency)}</span></p>
               {missingKey && (
-                <Banner kind="warn" title="This browser has no signing key" action={<button className="btn-secondary" onClick={async () => { await registerKey(); setMissingKey(false); }}>Create new key</button>}>
+                <Banner kind="warn" title="This browser has no signing key" action={<button className="btn-secondary" onClick={async () => { const pw = window.prompt("Enter your password to create a new signing key"); if (!pw) return; await registerKey(pw); setMissingKey(false); }}>Create new key</button>}>
                   Create a new key to approve payments. You will need to sign the policy again.
                 </Banner>
               )}

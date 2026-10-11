@@ -34,16 +34,17 @@ export async function exportPublicKey(pair: CryptoKeyPair): Promise<string> {
   return b64(await crypto.subtle.exportKey("spki", pair.publicKey));
 }
 
-export async function registerKey(): Promise<void> {
+/** The password is only needed when this replaces a key the server already knows. */
+export async function registerKey(password?: string): Promise<void> {
   const pair = await ensureKeypair();
-  await api("/auth/register-key", { body: { public_key: await exportPublicKey(pair) } });
+  await api("/auth/register-key", { body: { public_key: await exportPublicKey(pair), password } });
 }
 
 /** Makes a fresh key. The server then deactivates the active policy, so the owner must sign a new one. */
-export async function resetKey(): Promise<void> {
+export async function resetKey(password: string): Promise<void> {
   requireCrypto();
   await del(KEY);
-  await registerKey();
+  await registerKey(password);
 }
 
 /** Returns base64 of the raw 64 byte r||s signature. */

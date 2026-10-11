@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -22,6 +23,37 @@ def verify_password(pw: str, hashed: str) -> bool:
         return bcrypt.checkpw(pw.encode("utf-8")[:72], hashed.encode("utf-8"))
     except ValueError:
         return False
+
+
+DUMMY_HASH = hash_password("not-a-real-password")
+
+
+class LoginLimiter:
+    """Blocks a client and email pair after too many failures in a window.
+    ponytail: in memory, per process, so it resets on restart; use Redis or the DB if the API runs on several workers."""
+
+    def __init__(self, max_fails: int = 5, window: int = 300):
+        self.max_fails, self.window, self.fails = max_fails, window, {}
+
+    def _recent(self, key) -> list:
+        now = time.monotonic()
+        self.fails[key] = [t for t in self.fails.get(key, []) if now - t < self.window]
+        return self.fails[key]
+
+    def blocked(self, key) -> bool:
+        return len(self._recent(key)) >= self.max_fails
+
+    def fail(self, key) -> None:
+        self._recent(key).append(time.monotonic())
+
+    def reset(self, key) -> None:
+        self.fails.pop(key, None)
+
+    def clear(self) -> None:
+        self.fails.clear()
+
+
+login_limiter = LoginLimiter()
 
 
 def create_token(user_id: int) -> str:

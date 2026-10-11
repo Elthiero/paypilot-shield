@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
+from .config import check_production_settings, settings
 from .db import Base, SessionLocal, engine
 from .deps import hash_password
 from . import models
@@ -12,6 +12,7 @@ from .routers import dev, auth, suppliers, invoices, mandates, agent, approvals,
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    check_production_settings()
     Base.metadata.create_all(engine)
     db = SessionLocal()
     try:
@@ -35,7 +36,7 @@ for r in (auth, suppliers, invoices, mandates, agent, approvals, transactions, w
     app.include_router(r.router)
 
 
-if settings.app_env == "development":  # tamper demo helper, never mounted elsewhere
+if settings.app_env == "development":  # tamper demo helper, only with APP_ENV=development
     app.include_router(dev.router)
 
 

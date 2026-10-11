@@ -45,7 +45,7 @@ Rules:
 | `VITE_API_URL` | `http://localhost:8000` | `/paypilot/api` |
 | `VITE_BASE` | `/` | `/paypilot/` |
 
-In `vite.config.ts` set `base: process.env.VITE_BASE || "/"`. In `main.tsx` use `<BrowserRouter basename={import.meta.env.BASE_URL}>`. This keeps the Render fallback (served at `/`) and the VPS (served at `/paypilot/`) both working.
+In `vite.config.ts` set `base: process.env.VITE_BASE || "/"`. In `main.tsx` use `<BrowserRouter basename={import.meta.env.BASE_URL}>`. This keeps local dev (served at `/`) and the VPS (served at `/paypilot/`) both working.
 
 ## 3. File layout
 
@@ -100,7 +100,7 @@ Base URL is `VITE_API_URL`. All endpoints except `/health` and `/auth/login` nee
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | `{ ok: true, paypal_mode: "sandbox" or "fake" }`. Show paypal_mode as a badge in the top bar |
-| POST | `/auth/login` | Body `{ email, password }`. Returns `{ token, email }`. 401 `Wrong email or password` |
+| POST | `/auth/login` | Body `{ email, password }`. Returns `{ token, email }`. 401 `Wrong email or password`. 429 after 5 failed attempts in 5 minutes for the same client and email |
 | GET | `/auth/me` | Returns `{ id, email }`. Use at app start to validate the token |
 | GET | `/suppliers` | Array of `{ id, name, paypal_email, verified, last_payout_email, country }` |
 | GET | `/invoices` | Array of invoices (shape below) ordered by number |
@@ -153,7 +153,7 @@ Enums used in the UI:
 **Keys**
 | Method | Path | Body / Response |
 |---|---|---|
-| POST | `/auth/register-key` | Body `{ public_key }`: base64 of the SPKI DER public key (`exportKey("spki")`). 400 if it is not a P-256 key. Returns `{ ok: true }`. Registering a different key deactivates the active policy, because its signature no longer matches |
+| POST | `/auth/register-key` | Body `{ public_key, password? }`: base64 of the SPKI DER public key (`exportKey("spki")`). 400 if it is not a P-256 key. Returns `{ ok: true }`. Replacing a key the server already has needs `password` (403 `Password required to replace the signing key`). Registering a different key deactivates the active policy, because its signature no longer matches |
 
 **Policy (mandate)**. Flow: prepare, sign in the browser, activate.
 | Method | Path | Body / Response |
