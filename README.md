@@ -59,15 +59,15 @@ Business email compromise and fake invoices cost companies billions every year. 
 | Trust and decision | Truth check, decision, signed policy, verifier | Plain Python, `cryptography` |
 | Data and integrations | Invoices, suppliers, transactions, audit events, PayPal | PostgreSQL, SQLAlchemy, PayPal Payouts sandbox |
 
-More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md) and [docs/layer2.md](docs/layer2.md).
+More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md) and [docs/layer2.md](docs/layer2.md) and [docs/layer3.md](docs/layer3.md).
 
 ## Project status
 
 | Layer | Status |
 |---|---|
 | Layer 1, core (login, invoices, pipeline, agent, real sandbox payout, audit log) | Done |
-| Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | In progress |
-| Layer 3, detection (extra fraud signals, AI classifier) | Planned |
+| Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | Done |
+| Layer 3, detection (extra fraud signals; AI classifier not built) | Done |
 | Layer 4, presentation (UI, AG Grid, replay page) | Planned |
 
 ## Quick start (local)

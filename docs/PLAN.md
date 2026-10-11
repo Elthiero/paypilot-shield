@@ -12,7 +12,7 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 |---|---|
 | Layer 1 core (login, invoices, pipeline, agent with rules fallback, real sandbox payout, audit log) | Done, 18 tests passing |
 | Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Not started (stub files only) |
-| Layer 3 detection (extra fraud signals) | Not started |
+| Layer 3 detection (extra fraud signals) | Done, 51 tests passing. LLM classifier not built |
 | Frontend | Scaffold only (every page is a 3 line placeholder) |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
 | Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned |
@@ -104,7 +104,7 @@ Set this in `.github/CODEOWNERS`:
 ### Week 3: Sun 25 Oct to Sat 31 Oct (integration and detection)
 
 **Elthiero (backend)**
-- [ ] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
+- [x] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
 - [ ] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling
 - [ ] Deploy to the VPS: docker compose (backend and Postgres), nginx server block, certbot, `/paypilot/api` proxy, deploy workflow
 - [ ] Replace Render fallback only after the VPS has run 3 days cleanly

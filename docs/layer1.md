@@ -79,6 +79,7 @@ Blocking:
 Review:
 
 - First payment to a supplier with no history.
+- Layer 3 adds duplicate invoice, amount outlier, new payee email and round amount. See [layer3.md](layer3.md).
 
 `decision.py` is a few lines:
 
