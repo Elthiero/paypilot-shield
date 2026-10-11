@@ -3,7 +3,7 @@
 Request pipeline:
 1. Agent understands the owner message and calls submit_payment_request
 2. Pipeline loads invoice, supplier, history and the active signed policy
-3. Truth check produces signals (rules plus optional LLM classifier, can only raise risk)
+3. Truth check produces signals (rules, see layer3.md; an LLM classifier that can only raise risk is planned but not built)
 4. Decision: AUTO_PAY, NEEDS_APPROVAL or BLOCKED
 5. If NEEDS_APPROVAL, owner signs a cart in the browser
 6. Verifier checks policy signature, invoice hash, payee, amount, budget, nonce

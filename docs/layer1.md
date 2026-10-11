@@ -138,7 +138,7 @@ Invoices enter the database only through `backend/seed.py`. It drops every table
 | `GET /payments`, `GET /payments/{id}/trace` | Payment requests and their audit trail |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payouts and status refresh |
 
-`/mandates`, `/approvals` and `/webhooks` are stubs for later layers.
+`/webhooks` is a stub. `/mandates` and `/approvals` were stubs in layer 1 and are live since layer 2.
 
 ## Demo invoices and expected results
 

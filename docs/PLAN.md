@@ -4,18 +4,19 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 
 **Team:** Elthiero (backend, integrations, deploy) and Alain (frontend). Both share docs, demo and submission.
 **Deadline:** Devpost closes Thu 12 Nov 2026, 12:00 PST (22:00 Kigali). **Our submit target: Tue 10 Nov.** Keep 2 days of slack.
-**Today:** Sun 11 Oct. That is 30 days to the target.
+**Today:** Mon 12 Oct. That is 29 days to the target.
 
 ## 1. Where we are
 
 | Area | Status |
 |---|---|
-| Layer 1 core (login, invoices, pipeline, agent with rules fallback, real sandbox payout, audit log) | Done, 18 tests passing |
-| Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Not started (stub files only) |
-| Layer 3 detection (extra fraud signals) | Done, 51 tests passing. LLM classifier not built |
-| Frontend | Scaffold only (every page is a 3 line placeholder) |
+| Layer 1 core (login, invoices, pipeline, agent with rules fallback, real sandbox payout, audit log) | Done, tag `v0.1-core` |
+| Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Done, tag `v0.2-trust` |
+| Layer 3 detection (extra fraud signals, structured reasons) | Done, 56 tests passing, tag `v0.3-detection`. LLM classifier not built |
+| Frontend (Layer 4) | All 8 pages built and calling the real API. Needs the live URL, the base path deep link test and the polish checks |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
-| Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned |
+| Webhook | Not built (stub). The manual Refresh button covers it |
+| Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned. `render.yaml` exists as the fallback |
 
 ## 2. Gates (dates that must hold)
 
@@ -64,40 +65,40 @@ Set this in `.github/CODEOWNERS`:
 
 **Elthiero (backend)**
 - [ ] Housekeeping: replace seed emails with the US sandbox personal accounts, reset the password in the setup SQL, add CODEOWNERS, protect `main`, invite Alain
-- [ ] OpenAI compatible LLM support (Grok or Groq) with the rules fallback kept
-- [ ] `POST /payments` and `GET /payments/{id}` (small additions, section 5.2 of FRONTEND.md)
+- [x] OpenAI compatible LLM support (Grok or Groq) with the rules fallback kept
+- [x] `POST /payments` and `GET /payments/{id}` (small additions, section 5.2 of FRONTEND.md)
 - [ ] CORS and `VITE_API_URL` confirmed for local dev
-- [ ] Tag `v0.1-core`
-- [ ] Draft the Layer 2 design note (mandate payload format, signature check) in `docs/devlog.md`
+- [x] Tag `v0.1-core`
+- [x] Draft the Layer 2 design note (mandate payload format, signature check) in `docs/devlog.md`
 
 **Alain (frontend)**
 - [ ] Clone, run backend locally in fake mode, log in via curl to confirm it works
 - [ ] Tailwind, fonts, tokens, global ruled paper background, `lucide-react`
-- [ ] `api.ts` with `ApiError`, 401 handling, mock layer, `types.ts`
-- [ ] Shell (top nav), StatusBadge, EmptyState, ErrorState, Spinner, auth guard
-- [ ] Login page
-- [ ] Agent screen (chat, step blocks, decision card) against the real `/agent/chat`
+- [x] `api.ts` with `ApiError`, 401 handling, mock layer, `types.ts`
+- [x] Shell (top nav), StatusBadge, EmptyState, ErrorState, Spinner, auth guard
+- [x] Login page
+- [x] Agent screen (chat, step blocks, decision card) against the real `/agent/chat`
 
 **Handoff by Sat 17 Oct:** `POST /payments` live. Alain's Login and Agent screens work against the real backend.
 
 ### Week 2: Sun 18 to Sat 24 Oct (Layer 2, the 24 Oct gate)
 
 **Elthiero (backend)**
-- [ ] `POST /auth/public-key` (store the user's JWK public key)
-- [ ] Mandate service: build the exact payload string from rules, store, verify ECDSA P-256 signature (raw r||s to DER with `encode_dss_signature`)
-- [ ] `/mandates`: `GET /current`, `POST /draft` (rule parser first, LLM optional), `POST /` (verify and activate), `GET /` (history), `GET /{id}/verify`
-- [ ] Pipeline reads the active signed mandate instead of defaults. No valid mandate means no payment (BLOCKED, reason "No valid signed policy")
-- [ ] `/approvals`: `GET /`, `POST /{id}/approve` (verify signature over `cart_payload`, then execute payout), `POST /{id}/reject`
-- [ ] Tamper endpoint (non production) and the tamper test in pytest
-- [ ] Tests for: valid signature, wrong signature, modified payload, expired mandate, replayed approval
-- [ ] Post the finished contract (any changes) to FRONTEND.md by Wed 21 Oct
+- [x] `POST /auth/register-key` (renamed from `/auth/public-key`; store the user's JWK public key)
+- [x] Mandate service: build the exact payload string from rules, store, verify ECDSA P-256 signature (raw r||s to DER with `encode_dss_signature`)
+- [x] `/mandates`: `GET /current`, `POST /draft` (rule parser first, LLM optional), `POST /` (verify and activate), `GET /` (history), `GET /{id}/verify`
+- [x] Pipeline reads the active signed mandate instead of defaults. No valid mandate means no payment (BLOCKED, reason "No valid signed policy")
+- [x] `/approvals`: `GET /`, `POST /{id}/approve` (verify signature over `cart_payload`, then execute payout), `POST /{id}/reject`
+- [x] Tamper endpoint (non production) and the tamper test in pytest
+- [x] Tests for: valid signature, wrong signature, modified payload, expired mandate, replayed approval
+- [x] Post the finished contract (any changes) to FRONTEND.md by Wed 21 Oct
 
 **Alain (frontend)**
-- [ ] Invoices (grid, drawer, request payment), Suppliers, Payments (stat cards, two tabs), Replay (trace timeline)
-- [ ] `crypto.ts`: keypair, export public key, sign, secure context check
-- [ ] Signing modal component (ceremony, sealed state)
-- [ ] Policy and Approvals pages against mocks first, then real endpoints as they land
-- [ ] Register the public key after first login
+- [x] Invoices (grid, drawer, request payment), Suppliers, Payments (stat cards, two tabs), Replay (trace timeline)
+- [x] `crypto.ts`: keypair, export public key, sign, secure context check
+- [x] Signing modal component (ceremony, sealed state)
+- [x] Policy and Approvals pages against mocks first, then real endpoints as they land
+- [x] Register the public key after first login
 
 **Gate Sat 24 Oct:** sign a policy in the browser, approve INV-003 by signature, tamper turns the badge invalid and payments stop.
 
@@ -111,10 +112,10 @@ Set this in `.github/CODEOWNERS`:
 - [ ] Seed and reset script for demo data (`python seed.py --reset`)
 
 **Alain (frontend)**
-- [ ] Wire every screen to real endpoints, remove unused mocks
+- [x] Wire every screen to real endpoints, remove unused mocks
 - [ ] Base path support (`VITE_BASE=/paypilot/`, router basename) and test at `/paypilot/approvals` deep link
 - [ ] All four states on every page, keyboard path, reduced motion
-- [ ] Tamper banner and the Demo tools card
+- [x] Tamper banner and the Demo tools card
 - [ ] Production build served by nginx from `/var/www/paypilot`
 
 **Gate Sat 31 Oct:** full demo path on the live URL.
