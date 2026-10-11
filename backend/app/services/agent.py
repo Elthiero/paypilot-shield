@@ -31,6 +31,11 @@ TOOLS = [
                       "required": ["payment_request_id"]}},
 ]
 
+def openai_tools():
+    return [{"type": "function",
+             "function": {"name": t["name"], "description": t["description"],
+                          "parameters": t["input_schema"]}} for t in TOOLS]
+
 
 def llm_enabled() -> bool:
     return bool(settings.llm_api_key and settings.llm_model)
@@ -145,13 +150,40 @@ def llm_agent(db, message: str, trace: list) -> dict:
     return {"reply": "I could not finish that request. Please try again.", "payment_request_id": last_pr}
 
 
+def llm_agent_openai(db, message: str, trace: list) -> dict:
+    """Same tool loop for OpenAI compatible providers (Groq, xAI)."""
+    from openai import OpenAI
+    client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": message}]
+    tools = openai_tools()
+    last_pr = None
+    for _ in range(6):
+        resp = client.chat.completions.create(model=settings.llm_model, temperature=0,
+                                              messages=messages, tools=tools)
+        msg = resp.choices[0].message
+        if not msg.tool_calls:
+            return {"reply": msg.content or "Done.", "payment_request_id": last_pr}
+        messages.append({"role": "assistant", "content": msg.content, "tool_calls": [
+            {"id": c.id, "type": "function",
+             "function": {"name": c.function.name, "arguments": c.function.arguments}}
+            for c in msg.tool_calls]})
+        for c in msg.tool_calls:
+            args = json.loads(c.function.arguments or "{}")
+            out = run_tool(db, c.function.name, args)
+            trace.append({"tool": c.function.name, "input": args, "output": out})
+            if isinstance(out, dict) and out.get("payment_request_id"):
+                last_pr = out["payment_request_id"]
+            messages.append({"role": "tool", "tool_call_id": c.id, "content": json.dumps(out, default=str)})
+    return {"reply": "I could not finish that request. Please try again.", "payment_request_id": last_pr}
+
+
 def run_agent(db, message: str) -> dict:
     trace: list = []
     mode = "rules"
     try:
         if llm_enabled():
             mode = "llm"
-            out = llm_agent(db, message, trace)
+            out = (llm_agent_openai if settings.llm_base_url else llm_agent)(db, message, trace)
         else:
             out = rule_based_agent(db, message, trace)
     except Exception as e:  # LLM outage must never break the product

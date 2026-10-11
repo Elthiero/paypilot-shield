@@ -146,6 +146,7 @@ Other messages to try: `Pay INV-003`, `Pay INV-004`, `Pay INV-005`, `Why INV-005
 | `PAYPAL_MODE` | `sandbox` for real sandbox calls, `fake` for an offline stand-in |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Sandbox app credentials |
 | `LLM_API_KEY`, `LLM_MODEL` | Optional. Without them a rule based matcher handles chat |
+| `LLM_BASE_URL` | Optional. Set it to use an OpenAI compatible provider (Groq `https://api.groq.com/openai/v1`, xAI `https://api.x.ai/v1`). Empty means Anthropic |
 | `CORS_ORIGINS` | Allowed frontend origins |
 
 Never commit `.env`. It is in `.gitignore`.

@@ -13,3 +13,4 @@ anthropic
 pytest
 psycopg[binary]
 python-dotenv
+openai

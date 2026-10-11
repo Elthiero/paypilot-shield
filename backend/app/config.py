@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     llm_api_key: str = ""
     llm_model: str = ""
+    llm_base_url: str = ""
     cors_origins: str = "http://localhost:5173"
 
     # Layer 1 default policy (replaced by the signed policy in Layer 2)
