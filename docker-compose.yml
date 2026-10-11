@@ -1,0 +1,38 @@
+# docker compose up --build   then open http://localhost:8080
+# First run only:             docker compose exec backend python seed.py
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FORWARDED_ALLOW_IPS: 172.28.0.0/24  # trust X-Forwarded-For only from containers on this network (nginx)
+    # DATABASE_URL comes from .env. From inside the container "localhost" is the container itself,
+    # so for a Postgres on this machine use host.docker.internal.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BASE: ${VITE_BASE:-/}
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24

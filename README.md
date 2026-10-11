@@ -178,6 +178,16 @@ The suite uses the fake PayPal client and a temporary SQLite database, so it nee
 
 ## Deployment
 
+### Docker Compose
+
+```bash
+cp .env.example .env        # then edit it, see below
+docker compose up --build   # open http://localhost:8080
+docker compose exec backend python seed.py   # first run only, loads suppliers, invoices and the owner account
+```
+
+Two services: `backend` (FastAPI, not published, uses the `DATABASE_URL` from `.env`) and `frontend` (nginx serving the built app and proxying `/api` to the backend). With `APP_ENV=development` in `.env` it runs with the `/dev` helpers on and weak secrets allowed. Without it, set a real `JWT_SECRET` and `DEMO_PASSWORD` or the backend refuses to start. For the `/paypilot/` path on the VPS build with `VITE_BASE=/paypilot/ docker compose build frontend`. Inside the container `localhost` is the container itself, so for a Postgres on the same machine use `DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/paypilot`. Signing needs HTTPS or `localhost`. `seed.py` wipes all data, so do not run it on data you want to keep.
+
 The target is a VPS behind nginx (see `docs/PLAN.md`). On any public server leave `APP_ENV` at its default (`production`): the API then refuses to start unless `JWT_SECRET` has at least 32 random characters and `DEMO_PASSWORD` at least 12, and the `/dev` tamper helpers are not mounted. Set `APP_ENV=development` only on your own machine. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
 
 ## Project structure

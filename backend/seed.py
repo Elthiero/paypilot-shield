@@ -2,7 +2,9 @@
 from decimal import Decimal
 
 from app.db import Base, engine, SessionLocal
-from app.models import Supplier, Invoice
+from app.config import settings
+from app.deps import hash_password
+from app.models import Supplier, Invoice, User
 
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
@@ -16,6 +18,8 @@ tech = Supplier(name="TechWorld", paypal_email="sb-o7a7j53297667@personal.exampl
 glob = Supplier(name="Global Services", paypal_email="sb-mngza53297677@personal.example.com", verified=True,
                 last_payout_email="sb-mngza53297677@personal.example.com")
 unk = Supplier(name="Unknown Supplier", paypal_email="sb-unknown@personal.example.com", verified=False)
+# the reset above also wiped the owner account, so recreate it
+db.add(User(email=settings.demo_email, password_hash=hash_password(settings.demo_password)))
 db.add_all([abc, tech, glob, unk])
 db.flush()
 
