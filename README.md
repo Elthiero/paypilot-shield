@@ -193,7 +193,14 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 ## Team
 
-Built by Thierry Donambi ([@Elthiero](https://github.com/Elthiero)) and a teammate.
+| Name | GitHub | Contact |
+|---|---|---|
+| Thierry Donambi | [@Elthiero](https://github.com/Elthiero) | thierrydonambi@gmail.com |
+| Alain Gaye | [@alaingaye](https://github.com/alaingaye) | lucienallaingaye@gmail.com |
+
+## Contributing
+
+Work happens on short-lived branches and pull requests into `main`. Each pull request needs a green `ci` run and a review from the other team member. Run `pytest -q` in `backend/` and `npm run build` in `frontend/` before opening one. Never commit `.env`, and add every new environment variable to `.env.example` in the same pull request.
 
 ## License
 
