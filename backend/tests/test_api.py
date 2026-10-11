@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.usefixtures("policy")
+
+
 def login(client):
     r = client.post("/auth/login", json={"email": "owner@paypilot.demo", "password": "test-pass"})
     assert r.status_code == 200

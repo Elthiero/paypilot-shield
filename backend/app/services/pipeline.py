@@ -3,18 +3,23 @@ import hashlib
 import json
 import time
 import uuid
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import httpx
 from sqlalchemy import func
 
 from ..config import settings
-from ..models import AuditEvent, Invoice, PaymentRequest, Supplier, Transaction
+from ..models import AuditEvent, Invoice, Mandate, PaymentRequest, Supplier, Transaction, User
 from .audit import audit
+from .mandate import build_cart_payload, signed_rules
 from .decision import decide
 from .paypal_client import get_paypal
 from .truth_check import run_truth_check
+from .verifier import verify_before_payment
+
+
+CART_HOURS = 24
 
 
 def default_rules() -> dict:
@@ -22,6 +27,22 @@ def default_rules() -> dict:
         "auto_limit": Decimal(str(settings.default_auto_limit)),
         "monthly_budget": Decimal(str(settings.default_monthly_budget)),
     }
+
+
+def active_policy(db):
+    """(mandate, user) for the active, unexpired signed policy, or (None, None). Single owner app."""
+    m = db.query(Mandate).filter_by(active=True).order_by(Mandate.id.desc()).first()
+    if not m or date.fromisoformat(signed_rules(m)["valid_until"]) < date.today():
+        return None, None
+    return m, db.get(User, m.user_id)
+
+
+def policy_rules(mandate) -> dict:
+    """Signed rules when a policy is active, otherwise the config defaults (payment is then refused anyway)."""
+    if not mandate:
+        return default_rules()
+    r = signed_rules(mandate)
+    return {"auto_limit": Decimal(str(r["auto_limit"])), "monthly_budget": Decimal(str(r["monthly_budget"]))}
 
 
 def invoice_hash(inv: Invoice) -> str:
@@ -90,7 +111,18 @@ def refresh_transaction(db, txn: Transaction, paypal) -> Transaction:
 
 
 def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = True) -> None:
-    """The only place in the codebase that moves money."""
+    """The only place in the codebase that moves money. The verifier runs here, so no caller can skip it."""
+    mandate, user = active_policy(db)
+    paid = db.query(Transaction).filter(Transaction.payment_request_id == pr.id,
+                                        Transaction.status.in_(["SUCCESS", "PENDING"])).count() > 0
+    failures = verify_before_payment(pr, inv, invoice_hash(inv), spent_this_month(db), mandate, user, paid)
+    if failures:
+        pr.status, pr.decision, pr.risk_level = "BLOCKED", "BLOCKED", "HIGH"  # the audit trail keeps the rules' original decision
+        pr.reasons = failures
+        inv.status = "BLOCKED"
+        audit(db, pr.id, "verifier_failed", {"failures": failures, "paypal_called": False})
+        return
+    audit(db, pr.id, "verifier_passed", {"mandate_id": mandate.id})
     batch_id = f"pp{pr.id}-{uuid.uuid4().hex[:10]}"  # unique per attempt, doubles as the idempotency key
     try:
         resp = paypal.send_payout(batch_id, pr.payee_email, Decimal(pr.amount), pr.currency,
@@ -150,7 +182,9 @@ def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = Tr
     signals = run_truth_check(db, inv, sup, history)
     audit(db, pr.id, "truth_check_done", signals.as_dict())
 
-    rules = default_rules()
+    mandate, _ = active_policy(db)
+    rules = policy_rules(mandate)
+    pr.mandate_id = mandate.id if mandate else None
     spent = spent_this_month(db)
     decision, risk, reasons = decide(rules, signals, spent, Decimal(inv.amount))
     pr.decision, pr.risk_level, pr.reasons = decision, risk, reasons
@@ -165,6 +199,9 @@ def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = Tr
     elif decision == "NEEDS_APPROVAL":
         pr.status = "AWAITING_APPROVAL"
         inv.status = "AWAITING_APPROVAL"
+        if mandate:  # without a signed policy the approval can be requested but never executed
+            expires = (datetime.utcnow() + timedelta(hours=CART_HOURS)).isoformat(timespec="seconds")
+            pr.cart_payload = build_cart_payload(mandate.id, inv.number, pr, expires)
         audit(db, pr.id, "approval_requested", {"reasons": reasons})
     else:
         execute_payout(db, pr, inv, paypal, wait=wait)

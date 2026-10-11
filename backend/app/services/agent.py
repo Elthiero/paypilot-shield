@@ -5,7 +5,7 @@ import re
 
 from ..config import settings
 from ..models import Invoice, PaymentRequest, Supplier
-from .pipeline import default_rules, get_trace, submit_payment_request
+from .pipeline import active_policy, get_trace, policy_rules, submit_payment_request
 
 SYSTEM = """You are PayPilot, an assistant that helps a business owner pay supplier invoices.
 You cannot move money. You can only call submit_payment_request, which hands the request to a
@@ -61,9 +61,10 @@ def run_tool(db, name: str, args: dict) -> dict:
             return {"error": "Supplier not found"}
         return {"name": sup.name, "verified": sup.verified, "country": sup.country}
     if name == "get_policy":
-        r = default_rules()
+        m, _ = active_policy(db)
+        r = policy_rules(m)
         return {"auto_limit": float(r["auto_limit"]), "monthly_budget": float(r["monthly_budget"]),
-                "note": "Layer 1 default policy. Signed policy arrives in Layer 2."}
+                "signed": bool(m), "note": "Signed by the owner." if m else "No active signed policy. Payments are refused."}
     if name == "submit_payment_request":
         return submit_payment_request(db, str(args.get("invoice_number", "")))
     if name == "explain_request":

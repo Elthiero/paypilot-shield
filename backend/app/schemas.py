@@ -18,3 +18,29 @@ class LoginIn(BaseModel):
 
 class ChatIn(BaseModel):
     message: str
+
+
+class KeyIn(BaseModel):
+    public_key: str  # base64 SPKI DER, P-256
+
+
+class PrepareIn(BaseModel):
+    policy_text: str
+    rules: Rules
+
+
+class SignIn(BaseModel):
+    signature: str  # base64, 64 raw bytes
+
+
+class RejectIn(BaseModel):
+    reason: str = ""
+
+
+class TamperIn(BaseModel):
+    amount: Decimal | None = None
+    payee_email: str | None = None
+
+
+class PaymentIn(BaseModel):
+    invoice_number: str

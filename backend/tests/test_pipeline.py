@@ -1,6 +1,9 @@
 from app.models import Transaction
 from app.services.pipeline import submit_payment_request, get_trace
 
+import pytest
+pytestmark = pytest.mark.usefixtures("policy")
+
 
 def test_inv001_auto_pay(db, spy):
     r = submit_payment_request(db, "INV-001", paypal=spy)

@@ -3,6 +3,10 @@ from types import SimpleNamespace as NS
 
 from app.services import agent as agent_mod
 from app.config import settings
+import pytest
+
+pytestmark = pytest.mark.usefixtures("policy")
+
 
 
 class FakeMessages:

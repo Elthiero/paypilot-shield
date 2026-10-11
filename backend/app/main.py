@@ -7,7 +7,7 @@ from .config import settings
 from .db import Base, SessionLocal, engine
 from .deps import hash_password
 from . import models
-from .routers import auth, suppliers, invoices, mandates, agent, approvals, transactions, webhooks, payments
+from .routers import dev, auth, suppliers, invoices, mandates, agent, approvals, transactions, webhooks, payments
 
 
 @asynccontextmanager
@@ -33,6 +33,10 @@ app.add_middleware(
 
 for r in (auth, suppliers, invoices, mandates, agent, approvals, transactions, webhooks, payments):
     app.include_router(r.router)
+
+
+if settings.app_env == "development":  # tamper demo helper, never mounted elsewhere
+    app.include_router(dev.router)
 
 
 @app.get("/health")

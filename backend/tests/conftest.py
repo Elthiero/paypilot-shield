@@ -64,3 +64,34 @@ def client(db):
     from app.main import app
     with TestClient(app) as c:
         yield c
+
+
+def make_policy(db, days=30, auto_limit="500", sign=True):
+    """An active, really signed policy for the demo user. days<0 makes an expired one."""
+    from datetime import datetime, timedelta
+    from app.deps import hash_password
+    from app.models import Mandate, User
+    from app.services.mandate import build_mandate_payload
+    from tests.test_mandate import make_key, sign_like_webcrypto
+    priv, pub = make_key()
+    user = db.query(User).filter_by(email="owner@paypilot.demo").first()
+    if not user:
+        user = User(email="owner@paypilot.demo", password_hash=hash_password("test-pass"))
+        db.add(user)
+    user.public_key = pub
+    db.flush()
+    until = datetime.utcnow() + timedelta(days=days)
+    rules = {"auto_limit": auto_limit, "currency": "USD", "monthly_budget": "5000", "require_verified": True,
+             "valid_until": until.date().isoformat()}
+    payload = build_mandate_payload(user.id, rules, "test policy")
+    m = Mandate(user_id=user.id, policy_text="test policy", rules=rules, payload=payload,
+                signature=sign_like_webcrypto(priv, payload) if sign else "AAAA", active=True, valid_until=until)
+    db.add(m)
+    db.commit()
+    m.priv = priv  # tests sign approvals with this
+    return m
+
+
+@pytest.fixture()
+def policy(db):
+    return make_policy(db)
