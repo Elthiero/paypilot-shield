@@ -72,6 +72,15 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs
 | Layer 3, detection (extra fraud signals; AI classifier not built) | Done |
 | Layer 4, presentation (UI, AG Grid, replay page) | Built, runs against the real API locally. Live deploy and polish still open |
 
+## Screenshots
+
+Taken on a local run with the fake PayPal stand-in (see `docs/screenshots/` for all 17).
+
+| | |
+|---|---|
+| ![Agent blocks INV-005](docs/screenshots/07-agent-blocked.png) | ![Signing an approval](docs/screenshots/09-approval-signing.png) |
+| ![Replay of a blocked payment](docs/screenshots/13-replay.png) | ![Payouts with duration](docs/screenshots/12-payments-payouts.png) |
+
 ## Quick start (local)
 
 **Requirements:** Python 3.11+, Node.js 20+, PostgreSQL 14+, a PayPal developer account.
