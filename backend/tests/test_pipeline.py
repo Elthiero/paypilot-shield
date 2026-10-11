@@ -52,3 +52,16 @@ def test_audit_trace_has_steps_in_order(db, spy):
     steps = [e["step"] for e in get_trace(db, r["payment_request_id"])]
     assert steps[:2] == ["request_received", "invoice_loaded"]
     assert "decision_made" in steps and steps[-1] == "payout_confirmed"
+
+
+def test_layer3_signal_turns_auto_pay_into_approval(db, spy):
+    from decimal import Decimal
+    from app.models import Invoice
+    submit_payment_request(db, "INV-001", paypal=spy)
+    db.add(Invoice(number="INV-X", supplier_id=1, description="Office supplies", amount=Decimal("251"),
+                   payee_email="abc@x.test"))
+    db.commit()
+    r = submit_payment_request(db, "INV-X", paypal=spy)
+    assert r["decision"] == "NEEDS_APPROVAL" and len(spy.payouts) == 1
+    steps = {e["step"]: e for e in get_trace(db, r["payment_request_id"])}
+    assert any("duplicate" in x for x in steps["truth_check_done"]["detail"]["review"])
