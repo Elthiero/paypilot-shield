@@ -59,6 +59,8 @@ Business email compromise and fake invoices cost companies billions every year. 
 | Trust and decision | Truth check, decision, signed policy, verifier | Plain Python, `cryptography` |
 | Data and integrations | Invoices, suppliers, transactions, audit events, PayPal | PostgreSQL, SQLAlchemy, PayPal Payouts sandbox |
 
+![Architecture](docs/architecture.png)
+
 More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md), [docs/layer2.md](docs/layer2.md), [docs/layer3.md](docs/layer3.md) and [docs/security.md](docs/security.md).
 
 ## Project status

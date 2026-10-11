@@ -13,4 +13,6 @@ Request pipeline:
 
 Deployment: `docker-compose.yml` runs two containers. nginx (frontend) serves the built app and proxies `/api` to the FastAPI backend, which is not published. The database is the `DATABASE_URL` in `.env`. See the README and [security.md](security.md).
 
-Replace this file with docs/architecture.png once you export the diagram.
+![PayPilot Shield architecture](architecture.png)
+
+The diagram is generated from [architecture.dot](architecture.dot). After editing it, run `dot -Tpng -Gdpi=150 docs/architecture.dot -o docs/architecture.png` (Graphviz).

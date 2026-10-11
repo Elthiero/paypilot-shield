@@ -1,0 +1,77 @@
+// Render: dot -Tpng -Gdpi=150 architecture.dot -o architecture.png
+digraph PayPilotShield {
+  graph [rankdir=TB, bgcolor="#FBFBF7", fontname="DejaVu Sans", fontsize=22, labelloc=t, pad=0.4,
+         nodesep=0.45, ranksep=0.6, splines=true, compound=true,
+         label=<<B>PayPilot Shield: architecture</B><BR/><FONT POINT-SIZE="13" COLOR="#444444">An AI agent can request a payment. A rules engine decides. The owner signs. A verifier checks before PayPal is called.</FONT>>];
+  node  [shape=box, style="filled,rounded", fillcolor="#FFFFFF", color="#111111", penwidth=2, fontname="DejaVu Sans", fontsize=12, margin="0.18,0.10"];
+  edge  [color="#111111", penwidth=1.6, fontname="DejaVu Sans", fontsize=10, fontcolor="#333333", arrowsize=0.8];
+
+  // Layer 4: presentation
+  subgraph cluster_browser {
+    label=<<B>Owner's browser</B>  (layer 4)>; style="filled,rounded"; fillcolor="#FFE3F0"; color="#111111"; penwidth=2; fontsize=13;
+    ui  [fillcolor="#FFC2DD", label=<<B>React app</B><BR/>Login, Agent chat, Invoices, Suppliers,<BR/>Payments, Policy, Approvals, Replay>];
+    key [fillcolor="#FFC2DD", label=<<B>WebCrypto signing key</B><BR/>ECDSA P-256, non-extractable<BR/>kept in IndexedDB, never leaves the browser>];
+    ui -> key [dir=both, label="sign policy\nand approvals"];
+  }
+
+  // Docker compose
+  subgraph cluster_compose {
+    label=<<B>docker compose</B>>; style="rounded,dashed"; color="#111111"; penwidth=2; fontsize=13;
+
+    nginx [fillcolor="#DCE4FB", label=<<B>frontend container (nginx)</B><BR/>serves the built app<BR/>proxies /api to the backend<BR/>sets X-Forwarded-For>];
+
+    subgraph cluster_backend {
+      label=<<B>backend container (FastAPI, non-root)</B>>; style="filled,rounded"; fillcolor="#FFFFFF"; color="#111111"; penwidth=2; fontsize=13;
+
+      api   [fillcolor="#DCE4FB", label=<<B>API and auth</B><BR/>JWT, login rate limit, input limits,<BR/>prepare and sign policy, approvals,<BR/>password to change the key>];
+      agent [fillcolor="#DCE4FB", label=<<B>Agent</B> (layer 1)<BR/>rules matcher or LLM<BR/>has no tool that moves money>];
+
+      subgraph cluster_pipeline {
+        label=<<B>Payment pipeline</B>>; style="filled,rounded"; fillcolor="#F4F4EE"; color="#111111"; fontsize=12;
+        load  [fillcolor="#DCE4FB", label=<<B>1. Load</B> (layer 1)<BR/>invoice, supplier, history,<BR/>frozen snapshot and hash>];
+        truth [fillcolor="#F9E7A8", label=<<B>2. Truth check</B> (layer 3)<BR/>unverified supplier, changed payee,<BR/>duplicate, outlier, new email,<BR/>prompt injection (normalised text)>];
+        decide[fillcolor="#DCE4FB", label=<<B>3. Decision</B> (layer 1)<BR/>deterministic rules,<BR/>never calls the LLM>];
+        auto  [fillcolor="#4ADE9A", label=<<B>AUTO_PAY</B>>];
+        appr  [fillcolor="#F5C842", label=<<B>NEEDS_APPROVAL</B><BR/>owner signs the exact cart>];
+        block [fillcolor="#FF5FA2", label=<<B>BLOCKED</B><BR/>PayPal never called>];
+        verify[fillcolor="#C9F2DD", label=<<B>4. Verifier</B> (layer 2)<BR/>policy signature, expiry, invoice hash,<BR/>payee, amount, budget, replay guard>];
+        pp    [fillcolor="#DCE4FB", label=<<B>5. PayPal client</B> (layer 1)<BR/>one payout per request id>];
+        load -> truth -> decide;
+        decide -> auto; decide -> appr; decide -> block;
+        auto -> verify; appr -> verify [label="signed\ncart"];
+        verify -> pp [label="all checks pass"];
+      }
+
+      policy [fillcolor="#C9F2DD", label=<<B>Signed policy</B> (layer 2)<BR/>limits, budget, valid until,<BR/>verified with the owner's public key>];
+      audit  [fillcolor="#DCE4FB", label=<<B>Audit log</B><BR/>written by every pipeline step,<BR/>each with a timestamp>];
+    }
+  }
+
+  // External
+  db  [shape=cylinder, fillcolor="#FFFFFF", label=<<B>PostgreSQL</B><BR/>users, suppliers, invoices, mandates,<BR/>payment requests, transactions, audit events<BR/>(DATABASE_URL from .env)>];
+  ppl [fillcolor="#C9F2DD", label=<<B>PayPal Payouts</B><BR/>sandbox>];
+  llm [fillcolor="#FFFFFF", style="filled,rounded,dashed", label=<<B>LLM provider</B><BR/>optional, OpenAI compatible or Anthropic<BR/>can only read and request>];
+
+  // Flows
+  ui -> nginx [label="HTTPS or localhost\n(signatures travel with the requests)"];
+  nginx -> api [label="/api"];
+  api -> agent [label="chat"];
+  api -> load [label="POST /payments"];
+  agent -> load [label="submit_payment_request"];
+  agent -> llm [style=dashed, label="optional"];
+  policy -> decide [style=dashed, label="limits"];
+  policy -> verify [style=dashed, label="signature"];
+  pp -> ppl [dir=both, label="  payout and status refresh"];
+  api -> db [ltail=cluster_backend, style=dotted, label="reads and writes\n(SQLAlchemy)", constraint=false];
+
+  // Legend
+  legend [shape=plain, style="", label=<
+    <TABLE BORDER="2" CELLBORDER="0" CELLSPACING="4" CELLPADDING="4" BGCOLOR="#FFFFFF">
+      <TR><TD COLSPAN="2"><B>Layers</B></TD></TR>
+      <TR><TD BGCOLOR="#DCE4FB" WIDTH="22"> </TD><TD ALIGN="LEFT">1  Core: login, invoices, pipeline, agent, payout</TD></TR>
+      <TR><TD BGCOLOR="#C9F2DD"> </TD><TD ALIGN="LEFT">2  Trust: signed policy, signed approvals, verifier</TD></TR>
+      <TR><TD BGCOLOR="#F9E7A8"> </TD><TD ALIGN="LEFT">3  Detection: fraud signals</TD></TR>
+      <TR><TD BGCOLOR="#FFC2DD"> </TD><TD ALIGN="LEFT">4  Presentation: the React app</TD></TR>
+    </TABLE>>];
+  db -> legend [style=invis];
+}
