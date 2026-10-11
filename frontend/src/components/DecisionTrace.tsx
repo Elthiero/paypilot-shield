@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { money, reasonText, stepLabel, when } from "../lib/format";
+import { duration, money, reasonText, stepLabel, when } from "../lib/format";
 import type { TraceEvent } from "../lib/types";
 import StepBlock from "./StepBlock";
 
@@ -32,11 +32,11 @@ function summary(e: TraceEvent): string {
   }
 }
 
-function One({ e, i }: { e: TraceEvent; i: number }) {
+function One({ e, i, start }: { e: TraceEvent; i: number; start: string }) {
   const [open, setOpen] = useState(false);
   const failed = FAIL.test(e.step) || (Array.isArray(e.detail.blocking) && e.detail.blocking.length > 0);
   return (
-    <StepBlock index={i} tab={stepLabel(e.step)} right={when(e.at)} failed={failed}>
+    <StepBlock index={i} tab={stepLabel(e.step)} right={i > 0 ? `${when(e.at)} (+${duration(start, e.at)})` : when(e.at)} failed={failed}>
       <p className="text-[14px]">{summary(e)}</p>
       <button className="font-mono text-[12px] underline mt-2 text-[#D9D9D9]" onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? "Hide" : "Show"} raw JSON
@@ -47,5 +47,5 @@ function One({ e, i }: { e: TraceEvent; i: number }) {
 }
 
 export default function DecisionTrace({ events }: { events: TraceEvent[] }) {
-  return <div className="space-y-3">{events.map((e, i) => <One key={e.id} e={e} i={i} />)}</div>;
+  return <div className="space-y-3">{events.map((e, i) => <One key={e.id} e={e} i={i} start={events[0].at} />)}</div>;
 }

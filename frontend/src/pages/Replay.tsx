@@ -9,6 +9,7 @@ import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
+import { duration } from "../lib/format";
 import type { PaymentDetail, TraceEvent } from "../lib/types";
 
 export default function Replay() {
@@ -36,6 +37,7 @@ export default function Replay() {
         <div className="mb-8 space-y-3">
           <DecisionCard invoice={d.invoice} supplier={d.supplier} amount={d.amount} currency={d.currency} decision={d.decision} risk={d.risk} reasons={d.reasons} />
           <p className="label flex items-center gap-2">Final status <StatusBadge value={d.status} /></p>
+          {trace.data && trace.data.length > 1 && <p className="label">Time from first to last step: {duration(trace.data[0].at, trace.data[trace.data.length - 1].at)}</p>}
         </div>
       )}
       {trace.data && (

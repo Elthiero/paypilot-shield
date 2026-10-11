@@ -10,7 +10,7 @@ import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { api } from "../lib/api";
-import { money, reasonText, when } from "../lib/format";
+import { duration, money, reasonText, when } from "../lib/format";
 import type { PaymentRequest, Reason, Transaction } from "../lib/types";
 
 function Stat({ label, value, icon, fill }: { label: string; value: ReactNode; icon: ReactNode; fill: string }) {
@@ -45,6 +45,7 @@ export default function Payments() {
     { field: "risk", headerName: "Risk", minWidth: 140, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { field: "reasons", headerName: "Reasons", minWidth: 260, sortable: false,
       valueFormatter: (p) => { const r: Reason[] = p.value ?? []; return r.length ? reasonText(r[0]) + (r.length > 1 ? ` (+${r.length - 1})` : "") : ""; } },
+    { field: "created_at", headerName: "Requested", minWidth: 190, valueFormatter: (p) => when(p.value) },
     { field: "status", headerName: "Status", minWidth: 170, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { headerName: "", maxWidth: 110, sortable: false, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => p.data && <Link className="text-blue underline" to={`/replay/${p.data.id}`}>Replay</Link> },
   ];
@@ -53,7 +54,10 @@ export default function Payments() {
     { field: "amount", headerName: "Amount", type: "rightAligned", maxWidth: 130, valueFormatter: (p) => money(p.value, p.data?.currency), cellClass: "money" },
     { field: "status", headerName: "Status", minWidth: 150, cellRenderer: (p: ICellRendererParams<Transaction>) => <StatusBadge value={p.value} /> },
     { field: "payout_batch_id", headerName: "Batch id", minWidth: 160 },
+    { field: "created_at", headerName: "Sent", minWidth: 190, valueFormatter: (p) => when(p.value) },
     { field: "completed_at", headerName: "Completed", minWidth: 190, valueFormatter: (p) => when(p.value) },
+    { headerName: "Duration", minWidth: 120, sortable: false,
+      valueGetter: (p) => p.data ? duration(p.data.created_at, p.data.completed_at) || (p.data.status === "PENDING" ? "pending" : "") : "" },
     { headerName: "", maxWidth: 130, sortable: false, cellRenderer: (p: ICellRendererParams<Transaction>) => p.data?.status === "PENDING" && <Button variant="secondary" className="!h-8" onClick={() => refresh(p.data!)}>Refresh</Button> },
   ];
 
