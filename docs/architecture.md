@@ -11,4 +11,6 @@ Request pipeline:
 8. Status recorded, audit events written
 9. Agent explains the outcome in plain language
 
+Deployment: `docker-compose.yml` runs two containers. nginx (frontend) serves the built app and proxies `/api` to the FastAPI backend, which is not published. The database is the `DATABASE_URL` in `.env`. See the README and [security.md](security.md).
+
 Replace this file with docs/architecture.png once you export the diagram.

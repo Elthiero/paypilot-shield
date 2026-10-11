@@ -12,11 +12,12 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 |---|---|
 | Layer 1 core (login, invoices, pipeline, agent with rules fallback, real sandbox payout, audit log) | Done, tag `v0.1-core` |
 | Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Done, tag `v0.2-trust` |
-| Layer 3 detection (extra fraud signals, structured reasons) | Done, 56 tests passing, tag `v0.3-detection`. LLM classifier not built |
+| Layer 3 detection (extra fraud signals, structured reasons) | Done, tag `v0.3-detection`. LLM classifier not built |
 | Frontend (Layer 4) | All 8 pages built and calling the real API. Needs the live URL, the base path deep link test and the polish checks |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
 | Webhook | Not built (stub). The manual Refresh button covers it |
-| Deploy | Not started. VPS (nginx) at `hackathon.donambi.dev/paypilot` planned |
+| Deploy | `docker-compose.yml` (backend and frontend, tested locally against Postgres 18) is done. Still open: VPS, nginx with HTTPS, deploy workflow |
+| Security | Review of 12 Oct done and fixed, see `docs/security.md` for the open items |
 
 ## 2. Gates (dates that must hold)
 
@@ -107,7 +108,7 @@ Set this in `.github/CODEOWNERS`:
 **Elthiero (backend)**
 - [x] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
 - [ ] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling
-- [ ] Deploy to the VPS: docker compose (backend and Postgres), nginx server block, certbot, `/paypilot/api` proxy, deploy workflow
+- [ ] Deploy to the VPS: reuse `docker-compose.yml`, add Postgres or a hosted `DATABASE_URL`, TLS (certbot) in front, `/paypilot/` base path (`VITE_BASE`), deploy workflow
 - [ ] Seed and reset script for demo data (`python seed.py --reset`)
 
 **Alain (frontend)**

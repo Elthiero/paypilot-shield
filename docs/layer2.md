@@ -18,7 +18,7 @@ This is an AP2 inspired simplification, not a full implementation of the protoco
 
 The server builds the exact string, the browser signs those bytes unchanged, and the server verifies against the stored string. Nothing is serialized twice, so there are no cross language formatting problems.
 
-1. **Key.** On login the browser creates an ECDSA P-256 key pair with `extractable: false` and keeps it in IndexedDB (`frontend/src/lib/crypto.ts`). It sends the public key (base64 SPKI) to `POST /auth/register-key`. Registering a different key deactivates the active policy, because its signature no longer matches.
+1. **Key.** On login the browser creates an ECDSA P-256 key pair with `extractable: false` and keeps it in IndexedDB (`frontend/src/lib/crypto.ts`). It sends the public key (base64 SPKI) to `POST /auth/register-key`. Registering a different key deactivates the active policy, because its signature no longer matches. Replacing a key the server already has requires the account password, so a stolen login token cannot swap in an attacker's key.
 2. **Prepare.** `POST /mandates/prepare` with the policy text and rules. The server validates them, stores an inactive mandate and returns `{ mandate_id, payload }`. The payload contains a fresh nonce.
 3. **Sign.** The browser signs the payload. WebCrypto returns a raw 64 byte `r||s` signature.
 4. **Activate.** `POST /mandates/{id}/sign`. The server converts raw to DER (`encode_dss_signature`), verifies, activates this mandate and deactivates older ones. It audits `mandate_activated`.
@@ -87,6 +87,7 @@ cd backend && PAYPAL_MODE=fake pytest -q
 | `test_mandates_api.py` | Key registration, prepare, sign, replace, new key deactivates, history, verify, policy tamper |
 | `test_verifier.py` | No policy, expired, forged signature, edited rules column, tampered invoice, replay, budget |
 | `test_approvals.py` | Approve pays, reject does not, bad signature keeps the request open, tamper after request, expiry |
+| `test_security.py` | Key replacement needs the password, login rate limit, weak production config refused, input limits, invoice claim (see [security.md](security.md)) |
 
 The tests sign with a real P-256 key and produce the same 64 byte format a browser produces. A `policy` fixture in `conftest.py` creates an active signed policy for the tests that pay.
 

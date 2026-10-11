@@ -236,7 +236,7 @@ For every screen: layout and look come from DESIGN.md. Below is behavior, data, 
 
 ### 7.1 Login (`/login`)
 - Form: email, password, submit. Prefill nothing in production. In development a hint line can show the demo email.
-- On submit call `POST /auth/login`. Store `token` in `sessionStorage`. After success, call `ensureKeypair()` then `POST /auth/register-key` once if the user has no registered key (store a `keyRegistered` flag in `localStorage`).
+- On submit call `POST /auth/login`. Store `token` in `sessionStorage`. After success, call `registerKey(password)` (it sends the public key to `POST /auth/register-key`; the same key again is a no-op). The password is only needed when this browser's key differs from the one the server has.
 - States: submitting (disable button), error (show `detail`).
 - Accept: wrong password shows "Wrong email or password"; success lands on `/`.
 
@@ -262,8 +262,8 @@ For every screen: layout and look come from DESIGN.md. Below is behavior, data, 
 
 ### 7.5 Payments (`/payments`)
 Two tabs.
-- **Requests** (from `/payments`): ID, Invoice, Amount, Decision, Risk, Reasons (first reason plus count), Status, Created. Row action "Replay" goes to `/replay/{id}`.
-- **Payouts** (from `/transactions`): Invoice, Amount, Status, Batch id, Completed. Row action "Refresh" calls `POST /transactions/{id}/refresh` and updates the row.
+- **Requests** (from `/payments`): ID, Invoice, Amount, Decision, Risk, Reasons (first reason plus count), Requested (`created_at`), Status. Row action "Replay" goes to `/replay/{id}`.
+- **Payouts** (from `/transactions`): Invoice, Amount, Status, Batch id, Sent (`created_at`), Completed, Duration (completed minus sent, "pending" until PayPal confirms). Row action "Refresh" calls `POST /transactions/{id}/refresh` and updates the row.
 - Add summary cards on top: total paid, awaiting approval, blocked count. Compute them client side from the lists.
 
 ### 7.6 Approvals (`/approvals`)
@@ -271,7 +271,7 @@ Two tabs.
 - Each card shows invoice, supplier, amount, payee email, risk, and every reason in plain words. A collapsible "What you are signing" shows `cart_payload` exactly.
 - **Approve** flow: `ensureKeypair()` then `signPayload(cart_payload)` then `POST /approvals/{id}/approve` with the signature. Disable the button while pending. On success show the resulting status and a link to Replay.
 - **Reject** flow: optional note, `POST /approvals/{id}/reject`.
-- Errors: 400 invalid signature shows "The signature did not verify. Re-register your key". If the browser has no key (IndexedDB cleared), offer "Create new key" which calls `ensureKeypair()` and `POST /auth/register-key`.
+- Errors: 400 invalid signature shows "The signature did not verify. Re-register your key". If the browser has no key (IndexedDB cleared), offer "Create new key". It asks for the password and calls `registerKey(password)`, because the server now requires it to replace a key. A failed login shows `detail`, and 429 means too many attempts.
 - Accept: INV-003 ($1,500) appears here after the agent is asked to pay it, and approving it creates a payout.
 
 ### 7.7 Policy (`/policy`)
@@ -285,6 +285,7 @@ Two tabs.
 ### 7.8 Replay (`/replay/:id`)
 - Header from `GET /payments/{id}` (or from the list as a fallback): invoice, amount, decision badge, risk, status.
 - Body: `DecisionTrace` , a vertical timeline of `GET /payments/{id}/trace`. Each step shows label, time, a pass or fail style when `detail` has a recognisable result, and an expandable raw JSON.
+- Every step after the first also shows its offset from the first step, for example `(+0.4 s)`, and the header shows the time from the first to the last step. Use `duration()` from `lib/format.ts`.
 - A "Copy as JSON" button for the whole trace, useful for the demo and for judges.
 - Accept: INV-005 shows the truth check failing on the changed payee email and the injected text, and ends at BLOCKED with no payout step.
 

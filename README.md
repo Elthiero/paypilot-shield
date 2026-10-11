@@ -59,7 +59,7 @@ Business email compromise and fake invoices cost companies billions every year. 
 | Trust and decision | Truth check, decision, signed policy, verifier | Plain Python, `cryptography` |
 | Data and integrations | Invoices, suppliers, transactions, audit events, PayPal | PostgreSQL, SQLAlchemy, PayPal Payouts sandbox |
 
-More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md) and [docs/layer2.md](docs/layer2.md) and [docs/layer3.md](docs/layer3.md).
+More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs/layer1.md), [docs/layer2.md](docs/layer2.md), [docs/layer3.md](docs/layer3.md) and [docs/security.md](docs/security.md).
 
 ## Project status
 
@@ -144,9 +144,10 @@ Nothing is paid until the owner has signed a policy. In the web app open **Polic
 
 | Variable | Purpose |
 |---|---|
+| `APP_ENV` | `production` (default) or `development`. Development mounts the `/dev` tamper helpers and allows weak secrets |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Signs login tokens |
-| `DEMO_EMAIL`, `DEMO_PASSWORD` | The seeded owner account |
+| `JWT_SECRET` | Signs login tokens. Outside development at least 32 random characters |
+| `DEMO_EMAIL`, `DEMO_PASSWORD` | The seeded owner account. Outside development the password needs at least 12 characters |
 | `PAYPAL_MODE` | `sandbox` for real sandbox calls, `fake` for an offline stand-in |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Sandbox app credentials |
 | `LLM_API_KEY`, `LLM_MODEL` | Optional. Without them a rule based matcher handles chat |
@@ -159,11 +160,13 @@ Never commit `.env`. It is in `.gitignore`.
 
 | Method and path | Purpose |
 |---|---|
-| `POST /auth/login` | Returns a JWT |
+| `POST /auth/login` | Returns a JWT. 429 after 5 failed attempts in 5 minutes |
+| `POST /auth/register-key` | Stores the browser's public key. Replacing an existing key needs the password |
+| `/mandates/...`, `/approvals/...` | Signed policy and signed approvals, see [docs/layer2.md](docs/layer2.md) |
 | `GET /invoices`, `GET /invoices/{number}` | Invoice data |
 | `GET /suppliers` | Supplier data |
 | `POST /agent/chat` | Talk to the agent |
-| `GET /payments`, `GET /payments/{id}/trace` | Payment requests and their audit steps |
+| `POST /payments`, `GET /payments`, `GET /payments/{id}`, `GET /payments/{id}/trace` | Request a payment, list requests, one request, its audit steps with timestamps. Every `reasons` item is `{ code, level, message }` |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
 | `GET /health` | Liveness check |
 
@@ -174,7 +177,7 @@ cd backend
 pytest -q
 ```
 
-The suite uses the fake PayPal client and a temporary SQLite database, so it needs no credentials and never calls PayPal. It covers the five demo invoices, idempotency (no double payment), the audit trace, the API and the agent loop.
+The suite uses the fake PayPal client and a temporary SQLite database, so it needs no credentials and never calls PayPal. It covers the five demo invoices, idempotency (no double payment), the audit trace, the API and the agent loop, the signed policy and approvals (Layer 2), the fraud signals (Layer 3) and the security hardening ([docs/security.md](docs/security.md)).
 
 ## Deployment
 
@@ -194,9 +197,12 @@ The target is a VPS behind nginx (see `docs/PLAN.md`). On any public server leav
 
 ```
 backend/app/        FastAPI app, models, routers, services (pipeline, decision, truth check, agent, PayPal client)
-backend/tests/      Pipeline, API and agent tests
+backend/tests/      Pipeline, API, agent, signature, truth check and security tests
+backend/Dockerfile  Backend image (non-root)
 frontend/src/       Pages, components, API client, WebCrypto signing
-docs/               Architecture notes, demo script, dev log
+frontend/Dockerfile, frontend/nginx.conf   Frontend image: built app plus the /api proxy
+docker-compose.yml  Backend and frontend services
+docs/               Architecture, layer notes, security, API contract, design, demo script, dev log
 scripts/            Database setup SQL and PayPal sandbox test
 ```
 
@@ -204,7 +210,8 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 - Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
-- Planned: richer fraud signals, vendor history analytics, dispute handling, multi-user roles.
+- Planned: PayPal webhook, LLM fraud classifier, fraud thresholds inside the signed policy, vendor history analytics, dispute handling, multi-user roles.
+- Known security gaps are listed in [docs/security.md](docs/security.md).
 
 ## Team
 
