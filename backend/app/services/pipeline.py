@@ -1,0 +1,173 @@
+"""The request pipeline. Plain Python, no LLM. Layer 1 has no signatures yet."""
+import hashlib
+import json
+import time
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+import httpx
+from sqlalchemy import func
+
+from ..config import settings
+from ..models import AuditEvent, Invoice, PaymentRequest, Supplier, Transaction
+from .audit import audit
+from .decision import decide
+from .paypal_client import get_paypal
+from .truth_check import run_truth_check
+
+
+def default_rules() -> dict:
+    return {
+        "auto_limit": Decimal(str(settings.default_auto_limit)),
+        "monthly_budget": Decimal(str(settings.default_monthly_budget)),
+    }
+
+
+def invoice_hash(inv: Invoice) -> str:
+    material = json.dumps({
+        "number": inv.number, "supplier_id": inv.supplier_id, "payee_email": inv.payee_email,
+        "amount": f"{Decimal(inv.amount):.2f}", "currency": inv.currency, "description": inv.description,
+    }, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def supplier_history(db, supplier_id: int) -> list:
+    rows = (db.query(Transaction.amount)
+            .join(PaymentRequest, PaymentRequest.id == Transaction.payment_request_id)
+            .join(Invoice, Invoice.id == PaymentRequest.invoice_id)
+            .filter(Invoice.supplier_id == supplier_id, Transaction.status == "SUCCESS").all())
+    return [float(r[0]) for r in rows]
+
+
+def spent_this_month(db) -> Decimal:
+    start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    total = (db.query(func.coalesce(func.sum(Transaction.amount), 0))
+             .filter(Transaction.status.in_(["SUCCESS", "PENDING"]), Transaction.created_at >= start).scalar())
+    return Decimal(str(total or 0))
+
+
+def get_trace(db, pr_id: int) -> list:
+    rows = db.query(AuditEvent).filter_by(payment_request_id=pr_id).order_by(AuditEvent.id).all()
+    return [{"id": e.id, "step": e.step, "detail": e.detail, "at": e.created_at.isoformat()} for e in rows]
+
+
+def summarize(db, pr: PaymentRequest, inv: Invoice) -> dict:
+    txn = db.query(Transaction).filter_by(payment_request_id=pr.id).order_by(Transaction.id.desc()).first()
+    return {
+        "ok": True, "payment_request_id": pr.id, "invoice": inv.number, "amount": float(pr.amount),
+        "decision": pr.decision, "risk": pr.risk_level, "reasons": pr.reasons or [], "status": pr.status,
+        "transaction": None if not txn else {
+            "id": txn.id, "status": txn.status, "payout_batch_id": txn.payout_batch_id, "paypal_txn_id": txn.paypal_txn_id,
+        },
+    }
+
+
+def refresh_transaction(db, txn: Transaction, paypal) -> Transaction:
+    """Poll PayPal for the payout status and update the transaction, request and invoice."""
+    if txn.status != "PENDING":
+        return txn
+    data = paypal.get_batch(txn.payout_batch_id)
+    batch_status = data["batch_header"]["batch_status"]
+    items = data.get("items", [])
+    pr = db.get(PaymentRequest, txn.payment_request_id)
+    inv = db.get(Invoice, pr.invoice_id)
+    if batch_status == "SUCCESS":
+        txn.status = "SUCCESS"
+        txn.paypal_txn_id = (items[0].get("transaction_id") if items else None)
+        txn.completed_at = datetime.utcnow()
+        pr.status = "PAID"
+        inv.status = "PAID"
+        audit(db, pr.id, "payout_confirmed", {"batch_status": batch_status, "paypal_txn_id": txn.paypal_txn_id})
+    elif batch_status in ("DENIED", "CANCELED", "FAILED"):
+        txn.status = "FAILED"
+        txn.completed_at = datetime.utcnow()
+        pr.status = "FAILED"
+        inv.status = "FAILED"
+        audit(db, pr.id, "payout_failed", {"batch_status": batch_status,
+                                           "items": [i.get("transaction_status") for i in items]})
+    return txn
+
+
+def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = True) -> None:
+    """The only place in the codebase that moves money."""
+    batch_id = f"pp{pr.id}-{uuid.uuid4().hex[:10]}"  # unique per attempt, doubles as the idempotency key
+    try:
+        resp = paypal.send_payout(batch_id, pr.payee_email, Decimal(pr.amount), pr.currency,
+                                  f"Invoice {inv.number}")
+    except httpx.HTTPStatusError as e:
+        pr.status = "FAILED"
+        inv.status = "FAILED"
+        audit(db, pr.id, "payout_error", {"http_status": e.response.status_code, "body": e.response.text[:500]})
+        return
+    payout_batch_id = resp["batch_header"]["payout_batch_id"]
+    txn = Transaction(payment_request_id=pr.id, payout_batch_id=payout_batch_id, amount=pr.amount,
+                      currency=pr.currency, status="PENDING")
+    db.add(txn)
+    pr.status = "SENT"
+    inv.status = "SENT"
+    db.flush()
+    audit(db, pr.id, "payout_sent", {"sender_batch_id": batch_id, "payout_batch_id": payout_batch_id,
+                                     "receiver": pr.payee_email, "amount": float(pr.amount)})
+    if not wait:
+        return
+    real = settings.paypal_mode != "fake"
+    for _ in range(6 if real else 1):
+        refresh_transaction(db, txn, paypal)
+        if txn.status != "PENDING":
+            break
+        if real:
+            time.sleep(3)
+
+
+def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = True) -> dict:
+    paypal = paypal or get_paypal()
+    inv = db.query(Invoice).filter_by(number=invoice_number.strip().upper()).first()
+    if not inv:
+        return {"ok": False, "error": f"Invoice {invoice_number} not found"}
+    sup = db.get(Supplier, inv.supplier_id)
+
+    # Idempotency: never create a second payment for something already paid or in flight
+    if inv.status in ("PAID", "SENT", "AWAITING_APPROVAL"):
+        existing = (db.query(PaymentRequest).filter_by(invoice_id=inv.id)
+                    .order_by(PaymentRequest.id.desc()).first())
+        if existing:
+            out = summarize(db, existing, inv)
+            out["note"] = f"Invoice is already {inv.status}. No new request was created."
+            return out
+
+    pr = PaymentRequest(invoice_id=inv.id, invoice_hash=invoice_hash(inv), payee_email=inv.payee_email,
+                        amount=inv.amount, currency=inv.currency, status="RECEIVED")
+    db.add(pr)
+    db.flush()
+    audit(db, pr.id, "request_received", {"invoice": inv.number})
+    audit(db, pr.id, "invoice_loaded", {"supplier": sup.name, "amount": float(inv.amount),
+                                        "payee_email": inv.payee_email, "invoice_hash": pr.invoice_hash})
+
+    history = supplier_history(db, sup.id)
+    audit(db, pr.id, "supplier_history_checked", {"successful_payouts": len(history)})
+
+    signals = run_truth_check(db, inv, sup, history)
+    audit(db, pr.id, "truth_check_done", signals.as_dict())
+
+    rules = default_rules()
+    spent = spent_this_month(db)
+    decision, risk, reasons = decide(rules, signals, spent, Decimal(inv.amount))
+    pr.decision, pr.risk_level, pr.reasons = decision, risk, reasons
+    audit(db, pr.id, "decision_made", {"decision": decision, "risk": risk, "reasons": reasons,
+                                       "rules": {k: float(v) for k, v in rules.items()},
+                                       "spent_this_month": float(spent)})
+
+    if decision == "BLOCKED":
+        pr.status = "BLOCKED"
+        inv.status = "BLOCKED"
+        audit(db, pr.id, "blocked_no_payout", {"paypal_called": False})
+    elif decision == "NEEDS_APPROVAL":
+        pr.status = "AWAITING_APPROVAL"
+        inv.status = "AWAITING_APPROVAL"
+        audit(db, pr.id, "approval_requested", {"reasons": reasons})
+    else:
+        execute_payout(db, pr, inv, paypal, wait=wait)
+
+    db.commit()
+    return summarize(db, pr, inv)

@@ -1,0 +1,200 @@
+# PayPilot Shield
+
+[![ci](https://github.com/Elthiero/paypilot-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/Elthiero/paypilot-shield/actions/workflows/ci.yml)
+
+**An AI agent that pays supplier invoices through PayPal Payouts, but only inside a spending policy the owner has signed, and only after the invoice passes a truth check. Every decision is written to an audit log you can replay.**
+
+Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
+
+## The problem
+
+Business email compromise and fake invoices cost companies billions every year. Letting an AI agent pay invoices makes the risk worse: the agent can be tricked by a payee change or by instructions hidden inside an invoice. PayPilot Shield lets an agent do the work without letting it hold the money.
+
+## The golden rule
+
+> **The model proposes. Deterministic code decides.**
+
+- The agent has **no tool that moves money**. Its only way to ask for a payment is `submit_payment_request`, which hands the request to the pipeline.
+- The pipeline is plain Python. It checks the invoice, applies the owner's policy and returns one of three outcomes.
+- AI can raise the risk level of a request but can never lower it.
+- Invoice text is treated as untrusted data and is never followed as instructions.
+
+## Outcomes
+
+| Outcome | Meaning | What happens |
+|---|---|---|
+| `AUTO_PAY` | Inside policy and all checks passed | The payout is sent through PayPal |
+| `NEEDS_APPROVAL` | Valid, but above the auto limit or first payment | The owner reviews and signs the exact cart in the browser |
+| `BLOCKED` | A check failed (unverified supplier, changed payee email, injected instructions) | No PayPal call is made, reasons are shown |
+
+## Demo data
+
+| Invoice | Supplier | Amount | Expected outcome |
+|---|---|---|---|
+| INV-001 | ABC Supplies | $250 | AUTO_PAY |
+| INV-002 | TechWorld | $450 | AUTO_PAY |
+| INV-003 | Global Services | $1,500 | NEEDS_APPROVAL (over the $500 auto limit) |
+| INV-004 | Unknown Supplier | $900 | BLOCKED (unverified supplier) |
+| INV-005 | TechWorld | $480 | BLOCKED (payee email changed and hidden "ignore previous policy" text) |
+
+## How a request flows
+
+1. The owner asks the agent in plain language ("Pay INV-001").
+2. The agent calls `submit_payment_request`.
+3. The pipeline loads the invoice, supplier and payment history.
+4. The truth check produces signals (verification, payee change, injection patterns).
+5. The decision function returns `AUTO_PAY`, `NEEDS_APPROVAL` or `BLOCKED`.
+6. If approval is needed, the owner signs the cart in the browser.
+7. The verifier re-checks everything immediately before payout.
+8. The PayPal client sends the payout, using an idempotency key so a retry cannot pay twice.
+9. Each step is written to the audit log, and the agent explains the outcome.
+
+## Architecture
+
+| Layer | Contents | Stack |
+|---|---|---|
+| Presentation | Chat, policy editor, approvals, operations grid, audit replay | React, Vite, TypeScript, AG Grid, WebCrypto |
+| API | Auth, endpoints | FastAPI, Pydantic, JWT |
+| AI agent | Tool calling loop with read-only tools | LLM with a rule based fallback |
+| Trust and decision | Truth check, decision, signed policy, verifier | Plain Python, `cryptography` |
+| Data and integrations | Invoices, suppliers, transactions, audit events, PayPal | PostgreSQL, SQLAlchemy, PayPal Payouts sandbox |
+
+More detail: [docs/architecture.md](docs/architecture.md).
+
+## Project status
+
+| Layer | Status |
+|---|---|
+| Layer 1, core (login, invoices, pipeline, agent, real sandbox payout, audit log) | Done |
+| Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | In progress |
+| Layer 3, detection (extra fraud signals, AI classifier) | Planned |
+| Layer 4, presentation (UI, AG Grid, replay page) | Planned |
+
+## Quick start (local)
+
+**Requirements:** Python 3.11+, Node.js 20+, PostgreSQL 14+, a PayPal developer account.
+
+### 1. Database
+
+Edit the password in `scripts/setup_local_postgres.sql`, then:
+
+```bash
+sudo -u postgres psql -f scripts/setup_local_postgres.sql
+```
+
+### 2. Environment file
+
+```bash
+cp .env.example .env
+```
+
+Fill in `DATABASE_URL` (same password as above), `JWT_SECRET`, `DEMO_PASSWORD`, `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`.
+
+### 3. PayPal sandbox accounts
+
+In the PayPal developer dashboard (Testing Tools, Sandbox Accounts) create:
+
+- 1 **Business** account (country United States), funded. This is the sender.
+- 3 **Personal** accounts (country United States), one for each supplier that gets paid.
+
+Create a **Merchant** app linked to the business account and enable **Payouts**. Put the supplier emails into `backend/seed.py`.
+
+Check the credentials before building on them:
+
+```bash
+python scripts/test_paypal_sandbox.py --payout --email sb-xxxx@personal.example.com
+```
+
+### 4. Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python seed.py                              # creates tables and loads the five demo invoices
+uvicorn app.main:app --reload --port 8000
+```
+
+Open <http://localhost:8000/docs> for the interactive API, or <http://localhost:8000/health> for a quick check.
+
+### 5. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev                                 # http://localhost:5173
+```
+
+### 6. Try it
+
+Log in at `/docs` with `DEMO_EMAIL` and `DEMO_PASSWORD`, click **Authorize**, then call `POST /agent/chat`:
+
+```json
+{"message": "Pay INV-001"}
+```
+
+Other messages to try: `Pay INV-003`, `Pay INV-004`, `Pay INV-005`, `Why INV-005?`, `List invoices`.
+
+## Configuration
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Signs login tokens |
+| `DEMO_EMAIL`, `DEMO_PASSWORD` | The seeded owner account |
+| `PAYPAL_MODE` | `sandbox` for real sandbox calls, `fake` for an offline stand-in |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Sandbox app credentials |
+| `LLM_API_KEY`, `LLM_MODEL` | Optional. Without them a rule based matcher handles chat |
+| `CORS_ORIGINS` | Allowed frontend origins |
+
+Never commit `.env`. It is in `.gitignore`.
+
+## API overview
+
+| Method and path | Purpose |
+|---|---|
+| `POST /auth/login` | Returns a JWT |
+| `GET /invoices`, `GET /invoices/{number}` | Invoice data |
+| `GET /suppliers` | Supplier data |
+| `POST /agent/chat` | Talk to the agent |
+| `GET /payments`, `GET /payments/{id}/trace` | Payment requests and their audit steps |
+| `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
+| `GET /health` | Liveness check |
+
+## Tests
+
+```bash
+cd backend
+pytest -q
+```
+
+The suite uses the fake PayPal client and a temporary SQLite database, so it needs no credentials and never calls PayPal. It covers the five demo invoices, idempotency (no double payment), the audit trace, the API and the agent loop.
+
+## Deployment
+
+The repo includes a Render blueprint, [render.yaml](render.yaml), for the API and the static frontend. Connect the repository on Render, enter the secrets in the dashboard and deploy. Pushes to `main` redeploy automatically. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
+
+## Project structure
+
+```
+backend/app/        FastAPI app, models, routers, services (pipeline, decision, truth check, agent, PayPal client)
+backend/tests/      Pipeline, API and agent tests
+frontend/src/       Pages, components, API client, WebCrypto signing
+docs/               Architecture notes, demo script, dev log
+scripts/            Database setup SQL and PayPal sandbox test
+```
+
+## Limitations and roadmap
+
+- Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
+- Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
+- Planned: richer fraud signals, vendor history analytics, dispute handling, multi-user roles.
+
+## Team
+
+Built by Thierry Donambi ([@Elthiero](https://github.com/Elthiero)) and a teammate.
+
+## License
+
+[MIT](LICENSE)
