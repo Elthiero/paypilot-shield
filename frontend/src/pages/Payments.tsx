@@ -10,8 +10,8 @@ import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { api } from "../lib/api";
-import { money, when } from "../lib/format";
-import type { PaymentRequest, Transaction } from "../lib/types";
+import { money, reasonText, when } from "../lib/format";
+import type { PaymentRequest, Reason, Transaction } from "../lib/types";
 
 function Stat({ label, value, icon, fill }: { label: string; value: ReactNode; icon: ReactNode; fill: string }) {
   return (
@@ -44,7 +44,7 @@ export default function Payments() {
     { field: "decision", headerName: "Decision", minWidth: 170, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { field: "risk", headerName: "Risk", minWidth: 140, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { field: "reasons", headerName: "Reasons", minWidth: 260, sortable: false,
-      valueFormatter: (p) => { const r: string[] = p.value ?? []; return r.length ? r[0] + (r.length > 1 ? ` (+${r.length - 1})` : "") : ""; } },
+      valueFormatter: (p) => { const r: Reason[] = p.value ?? []; return r.length ? reasonText(r[0]) + (r.length > 1 ? ` (+${r.length - 1})` : "") : ""; } },
     { field: "status", headerName: "Status", minWidth: 170, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { headerName: "", maxWidth: 110, sortable: false, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => p.data && <Link className="text-blue underline" to={`/replay/${p.data.id}`}>Replay</Link> },
   ];

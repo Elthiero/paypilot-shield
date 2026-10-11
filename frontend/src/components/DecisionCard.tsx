@@ -1,6 +1,6 @@
 import { CircleCheck, TriangleAlert } from "lucide-react";
-import { money } from "../lib/format";
-import type { Decision, Risk } from "../lib/types";
+import { money, reasonText } from "../lib/format";
+import type { Decision, Reason, Risk } from "../lib/types";
 import StatusBadge from "./StatusBadge";
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   currency?: string;
   decision: Decision;
   risk: Risk;
-  reasons: string[];
+  reasons: Reason[];
   /** 0.6 only on the Agent screen */
   tilt?: number;
 }
@@ -42,9 +42,9 @@ export default function DecisionCard({ invoice, supplier, amount, currency, deci
       <p className="note mt-3">{LEAD[decision]}</p>
       <ul className="mt-1 space-y-1">
         {reasons.map((r) => (
-          <li key={r} className="flex items-start gap-2 text-[14px]">
+          <li key={r.code} className="flex items-start gap-2 text-[14px]">
             {pass ? <CircleCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> : <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden />}
-            {r}
+            {reasonText(r)}
           </li>
         ))}
       </ul>

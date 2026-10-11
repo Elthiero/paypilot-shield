@@ -12,7 +12,7 @@ import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
 import { hasKeypair, registerKey } from "../lib/crypto";
-import { money } from "../lib/format";
+import { money, reasonText } from "../lib/format";
 import type { ApprovalItem, PaymentSummary } from "../lib/types";
 
 export default function Approvals() {
@@ -32,7 +32,7 @@ export default function Approvals() {
     reload();
     refreshShell();
     if (r.status === "BLOCKED") {
-      throw new Error(`The verifier refused this payment: ${r.reasons.join("; ")}`);
+      throw new Error(`The verifier refused this payment: ${r.reasons.map(reasonText).join("; ")}`);
     }
     return (
       <div className="space-y-2">

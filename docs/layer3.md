@@ -17,6 +17,10 @@ Layer 3 adds fraud signals to the truth check (`backend/app/services/truth_check
 
 Blocking gives `BLOCKED` with no payout. Review gives `NEEDS_APPROVAL`. Layer 3 never lowers risk and never calls an LLM.
 
+## Reasons
+
+Every reason is `{ code, level, message }`. `level` is `block`, `review` or `info`. Codes: `supplier_unverified`, `payee_email_changed`, `prompt_injection`, `new_payee_email`, `duplicate_invoice`, `amount_outlier`, `round_amount`, `first_payment`, `above_auto_limit`, `budget_exceeded`, `all_clear`, `verifier_refused`. The same objects appear in `reasons` on payments, approvals and the pipeline summary, and in `blocking` and `review` of the `truth_check_done` trace entry. Verifier failures in the `verifier_failed` trace entry stay plain strings. The frontend shows `message` and may key styling on `code`.
+
 ## Tuning
 
 Constants at the top of `truth_check.py`: `OUTLIER_FACTOR`, `MIN_HISTORY`, `ROUND_STEP`, `DUP_TOLERANCE`, `PATTERNS`.
@@ -29,4 +33,3 @@ Constants at the top of `truth_check.py`: `OUTLIER_FACTOR`, `MIN_HISTORY`, `ROUN
 
 - LLM classifier that can only raise risk. Optional, first to cut.
 - Thresholds are fixed in code, not part of the signed policy (it would change the signed payload).
-- Structured reasons (`{code, level, message}`). It would change the API contract in `FRONTEND.md`, so it needs Alain's agreement.

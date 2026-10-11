@@ -130,7 +130,7 @@ Agent chat response:
 Payment request shape (`/payments`):
 ```json
 { "id": 12, "invoice": "INV-004", "amount": 900.0, "decision": "BLOCKED", "risk": "HIGH",
-  "reasons": ["Supplier is not verified"], "status": "BLOCKED", "created_at": "2026-10-11T10:00:00" }
+  "reasons": [{ "code": "supplier_unverified", "level": "block", "message": "Supplier is not verified" }], "status": "BLOCKED", "created_at": "2026-10-11T10:00:00" }
 ```
 
 Transaction shape (`/transactions`):
@@ -176,7 +176,7 @@ type Rules = { auto_limit: number | string; currency: string; monthly_budget: nu
 **Approvals**
 | Method | Path | Body / Response |
 |---|---|---|
-| GET | `/approvals` | Pending: `[{ id, invoice, supplier, amount, currency, risk, reasons[], cart_payload, created_at }]`. `id` is the payment request id. `cart_payload` is the exact string to sign. It holds the payee email, invoice hash and an `expires_at` 24 hours ahead |
+| GET | `/approvals` | Pending: `[{ id, invoice, supplier, amount, currency, risk, reasons: Reason[], cart_payload, created_at }]`. `id` is the payment request id. `cart_payload` is the exact string to sign. It holds the payee email, invoice hash and an `expires_at` 24 hours ahead |
 | POST | `/approvals/{id}/approve` | Body `{ signature }` over `cart_payload`. 400 `Signature invalid` (the request stays open), 409 if not awaiting or expired. Runs the verifier and the payout. Returns the pipeline summary. A refusal comes back as `status: "BLOCKED"` with the failures in `reasons` |
 | POST | `/approvals/{id}/reject` | Body `{ reason? }`. Sets `REJECTED`, returns the summary |
 
@@ -186,7 +186,7 @@ type Rules = { auto_limit: number | string; currency: string; monthly_budget: nu
 | POST | `/payments` | Body `{ invoice_number }`. Same pipeline the agent uses. Returns the pipeline summary |
 | GET | `/payments/{pr_id}` | Summary plus `supplier`, `currency`, `created_at`. Used by Replay for the header |
 
-Pipeline summary shape: `{ ok, payment_request_id, invoice, amount, decision, risk, reasons[], status, transaction: { id, status, payout_batch_id, paypal_txn_id } | null, note? }`.
+Pipeline summary shape: `{ ok, payment_request_id, invoice, amount, decision, risk, reasons: Reason[], status, transaction: { id, status, payout_batch_id, paypal_txn_id } | null, note? }`.
 
 Extra statuses the UI must handle: `REJECTED`, `EXPIRED`, `FAILED` (see DESIGN.md 2.4).
 
@@ -197,6 +197,7 @@ Extra statuses the UI must handle: `REJECTED`, `EXPIRED`, `FAILED` (see DESIGN.m
 ```ts
 export type Decision = "AUTO_PAY" | "NEEDS_APPROVAL" | "BLOCKED";
 export type Risk = "LOW" | "MEDIUM" | "HIGH";
+export interface Reason { code: string; level: "block" | "review" | "info"; message: string; }
 
 export interface Supplier { id: number; name: string; paypal_email: string; verified: boolean;
   last_payout_email: string | null; country: string; }
@@ -206,7 +207,7 @@ export interface Invoice { id: number; number: string; supplier: string | null;
   payee_email: string; status: string; }
 
 export interface PaymentRequest { id: number; invoice: string; amount: number;
-  decision: Decision | null; risk: Risk | null; reasons: string[] | null; status: string; created_at: string; }
+  decision: Decision | null; risk: Risk | null; reasons: Reason[] | null; status: string; created_at: string; }
 
 export interface Transaction { id: number; payment_request_id: number; invoice: string | null;
   payout_batch_id: string | null; paypal_txn_id: string | null; amount: number; currency: string;
@@ -223,9 +224,9 @@ export interface Rules { auto_limit: number | string; currency: string; monthly_
 export interface Mandate { id: number; rules: Rules; policy_text: string; payload: string;
   signature: string | null; valid_until: string | null; active: boolean; verified: boolean; }
 export interface ApprovalItem { id: number; invoice: string; supplier: string; amount: number;
-  currency: string; reasons: string[]; risk: Risk; created_at: string; cart_payload: string; }
+  currency: string; reasons: Reason[]; risk: Risk; created_at: string; cart_payload: string; }
 export interface PaymentSummary { ok: boolean; payment_request_id: number; invoice: string; amount: number;
-  decision: Decision; risk: Risk; reasons: string[]; status: string; note?: string;
+  decision: Decision; risk: Risk; reasons: Reason[]; status: string; note?: string;
   transaction: { id: number; status: string; payout_batch_id: string | null; paypal_txn_id: string | null } | null; }
 ```
 

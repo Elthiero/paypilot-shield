@@ -5,6 +5,10 @@ from app.models import Invoice
 from app.services.truth_check import run_truth_check
 
 
+def codes(s):
+    return {r["code"] for r in s.blocking + s.review}
+
+
 def sup(**kw):
     return NS(**{**dict(id=1, verified=True, name="Acme", paypal_email="a@x.test", last_payout_email="a@x.test"), **kw})
 
@@ -20,7 +24,7 @@ def test_clean(db):
 
 def test_outlier_uses_median(db):
     s = run_truth_check(db, inv(amount=Decimal("1500")), sup(), [100, 120, 5000])
-    assert any("median" in r for r in s.review)
+    assert codes(s) == {"amount_outlier"}
 
 
 def test_round_amount_alone_is_not_flagged(db):
@@ -29,20 +33,20 @@ def test_round_amount_alone_is_not_flagged(db):
 
 def test_round_amount_adds_context_to_flagged_invoice(db):
     s = run_truth_check(db, inv(amount=Decimal("3000")), sup(), [100, 120])
-    assert any("round" in r for r in s.review)
+    assert "round_amount" in codes(s)
 
 
 def test_new_payee_without_payout_history(db):
     s = run_truth_check(db, inv(payee_email="b@x.test"), sup(last_payout_email=None), [100])
-    assert any("registered" in r for r in s.review)
+    assert "new_payee_email" in codes(s)
 
 
 def test_duplicate(db):
     db.add(Invoice(number="D-1", supplier_id=1, description="x", amount=Decimal("100"), payee_email="a@x.test", status="PAID"))
     db.flush()
     s = run_truth_check(db, inv(amount=Decimal("100.50")), sup(), [])
-    assert any("duplicate" in r for r in s.review)
-    assert not any("duplicate" in r for r in run_truth_check(db, inv(amount=Decimal("120")), sup(), []).review)
+    assert "duplicate_invoice" in codes(s)
+    assert "duplicate_invoice" not in codes(run_truth_check(db, inv(amount=Decimal("120")), sup(), []))
 
 
 def test_injection(db):

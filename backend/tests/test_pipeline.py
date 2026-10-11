@@ -24,14 +24,14 @@ def test_inv003_needs_approval_no_payout(db, spy):
 def test_inv004_blocked_unverified(db, spy):
     r = submit_payment_request(db, "INV-004", paypal=spy)
     assert r["decision"] == "BLOCKED"
-    assert any("not verified" in x for x in r["reasons"])
+    assert any(x["code"] == "supplier_unverified" for x in r["reasons"])
     assert spy.payouts == []
 
 
 def test_inv005_blocked_two_reasons(db, spy):
     r = submit_payment_request(db, "INV-005", paypal=spy)
     assert r["decision"] == "BLOCKED" and len(r["reasons"]) >= 2
-    assert any("email" in x for x in r["reasons"]) and any("instructions" in x for x in r["reasons"])
+    assert {x["code"] for x in r["reasons"]} >= {"payee_email_changed", "prompt_injection"}
     assert spy.payouts == []
 
 
@@ -64,4 +64,4 @@ def test_layer3_signal_turns_auto_pay_into_approval(db, spy):
     r = submit_payment_request(db, "INV-X", paypal=spy)
     assert r["decision"] == "NEEDS_APPROVAL" and len(spy.payouts) == 1
     steps = {e["step"]: e for e in get_trace(db, r["payment_request_id"])}
-    assert any("duplicate" in x for x in steps["truth_check_done"]["detail"]["review"])
+    assert any(x["code"] == "duplicate_invoice" for x in steps["truth_check_done"]["detail"]["review"])

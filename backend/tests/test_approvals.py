@@ -46,7 +46,7 @@ def test_tamper_after_approval_is_refused(client, policy):
     a = request_inv003(client, h)
     client.patch("/dev/invoices/INV-003", json={"amount": "1.00", "payee_email": "attacker@x.test"}, headers=h)
     r = client.post(f"/approvals/{a['id']}/approve", json={"signature": sign_like_webcrypto(policy.priv, a["cart_payload"])}, headers=h).json()
-    assert r["status"] == "BLOCKED" and "Amount changed after evaluation" in r["reasons"]
+    assert r["status"] == "BLOCKED" and "Amount changed after evaluation" in [x["message"] for x in r["reasons"]]
     assert client.get("/transactions", headers=h).json() == []
 
 

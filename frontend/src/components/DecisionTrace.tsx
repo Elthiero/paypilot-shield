@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { money, stepLabel, when } from "../lib/format";
+import { money, reasonText, stepLabel, when } from "../lib/format";
 import type { TraceEvent } from "../lib/types";
 import StepBlock from "./StepBlock";
 
 const FAIL = /(failed|error|blocked|rejected|expired)/;
 
-const list = (v: unknown): string => (Array.isArray(v) ? v.join("; ") : "");
+const list = (v: unknown): string => (Array.isArray(v) ? v.map(reasonText).join("; ") : "");
 const usd = (v: unknown): string => (typeof v === "number" ? money(v) : String(v ?? ""));
 
 /** One plain sentence per known step. Unknown future steps fall back to the generic reasons or failures. */

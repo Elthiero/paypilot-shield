@@ -83,6 +83,6 @@ def test_policy_tamper_flips_verify_and_blocks_payment(client):
     assert client.get(f"/mandates/{mid}/verify", headers=h).json()["valid"] is False
     assert client.get("/mandates/active", headers=h).json()["verified"] is False
     r = client.post("/payments", json={"invoice_number": "INV-001"}, headers=h).json()
-    assert r["status"] == "BLOCKED" and r["reasons"] == ["Policy signature invalid"] and r["transaction"] is None
+    assert r["status"] == "BLOCKED" and [x["message"] for x in r["reasons"]] == ["Policy signature invalid"] and r["transaction"] is None
     one = client.get(f"/payments/{r['payment_request_id']}", headers=h).json()
     assert one["invoice"] == "INV-001" and one["supplier"] == "ABC Supplies"

@@ -72,11 +72,15 @@ def run_tool(db, name: str, args: dict) -> dict:
     return {"error": f"Unknown tool {name}"}
 
 
+def _msg(r) -> str:
+    return r["message"] if isinstance(r, dict) else str(r)  # old rows stored plain strings
+
+
 def format_result(res: dict) -> str:
     if not res.get("ok"):
         return res.get("error", "Something went wrong.")
     inv, amt, status = res["invoice"], res["amount"], res["status"]
-    reasons = "; ".join(res.get("reasons", []))
+    reasons = "; ".join(_msg(r) for r in res.get("reasons", []))
     if res.get("note"):
         return f"{inv}: {res['note']}"
     if status == "PAID":
@@ -112,7 +116,7 @@ def rule_based_agent(db, message: str, trace: list) -> dict:
         trace.append({"tool": "explain_request", "input": {"payment_request_id": pr.id}})
         res = run_tool(db, "explain_request", {"payment_request_id": pr.id})
         steps = ", ".join(e["step"].replace("_", " ") for e in res["events"])
-        return {"reply": f"For {number}: {pr.status}. Reasons: {'; '.join(pr.reasons or [])}. Steps recorded: {steps}.",
+        return {"reply": f"For {number}: {pr.status}. Reasons: {'; '.join(_msg(r) for r in pr.reasons or [])}. Steps recorded: {steps}.",
                 "payment_request_id": pr.id}
     if number:
         res = run_tool(db, "get_invoice", {"number": number})

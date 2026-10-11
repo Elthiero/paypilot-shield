@@ -15,7 +15,7 @@ from .audit import audit
 from .mandate import build_cart_payload, signed_rules
 from .decision import decide
 from .paypal_client import get_paypal
-from .truth_check import run_truth_check
+from .truth_check import reason, run_truth_check
 from .verifier import verify_before_payment
 
 
@@ -118,7 +118,7 @@ def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = Tr
     failures = verify_before_payment(pr, inv, invoice_hash(inv), spent_this_month(db), mandate, user, paid)
     if failures:
         pr.status, pr.decision, pr.risk_level = "BLOCKED", "BLOCKED", "HIGH"  # the audit trail keeps the rules' original decision
-        pr.reasons = failures
+        pr.reasons = [reason("verifier_refused", "block", f) for f in failures]
         inv.status = "BLOCKED"
         audit(db, pr.id, "verifier_failed", {"failures": failures, "paypal_called": False})
         return

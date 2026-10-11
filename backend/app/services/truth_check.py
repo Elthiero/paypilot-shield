@@ -30,6 +30,11 @@ def normalize(text: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", text).translate(_INVISIBLE).casefold().split())
 
 
+def reason(code: str, level: str, message: str) -> dict:
+    """level: block, review or info. The shape of every item in a payment's `reasons`."""
+    return {"code": code, "level": level, "message": message}
+
+
 @dataclass
 class Signals:
     blocking: list = field(default_factory=list)
@@ -43,28 +48,28 @@ def run_truth_check(db, inv, sup, history) -> Signals:
     """history is the list of amounts (float) of earlier successful payouts to this supplier."""
     s = Signals()
     if not sup.verified:
-        s.blocking.append("Supplier is not verified")
+        s.blocking.append(reason("supplier_unverified", "block", "Supplier is not verified"))
     payee = inv.payee_email.strip().lower()
     if sup.last_payout_email and payee != sup.last_payout_email.strip().lower():
-        s.blocking.append("Payee email differs from the supplier's last successful payout email")
+        s.blocking.append(reason("payee_email_changed", "block", "Payee email differs from the supplier's last successful payout email"))
     elif payee != sup.paypal_email.strip().lower():
-        s.review.append("Payee email differs from the supplier's registered PayPal email")
+        s.review.append(reason("new_payee_email", "review", "Payee email differs from the supplier's registered PayPal email"))
     amt = Decimal(inv.amount)
     dup = (db.query(Invoice.number)
            .filter(Invoice.supplier_id == sup.id, Invoice.id != inv.id,
                    Invoice.amount.between(amt * (1 - DUP_TOLERANCE), amt * (1 + DUP_TOLERANCE)),
                    Invoice.status.notin_(["PENDING", "BLOCKED"])).first())
     if dup:
-        s.review.append(f"Possible duplicate of {dup[0]}: same supplier and nearly the same amount")
+        s.review.append(reason("duplicate_invoice", "review", f"Possible duplicate of {dup[0]}: same supplier and nearly the same amount"))
     if len(history) >= MIN_HISTORY and float(amt) > OUTLIER_FACTOR * median(history):
-        s.review.append(f"Amount is more than {OUTLIER_FACTOR}x this supplier's median payout")
+        s.review.append(reason("amount_outlier", "review", f"Amount is more than {OUTLIER_FACTOR}x this supplier's median payout"))
     # every free-text field an attacker controls, not just the description
     text = normalize(" ".join([inv.description or "", inv.number or "", sup.name or ""]))
     if any(re.search(p, text) for p in PATTERNS):
-        s.blocking.append("Invoice text contains instructions aimed at the payer or an AI")
+        s.blocking.append(reason("prompt_injection", "block", "Invoice text contains instructions aimed at the payer or an AI"))
     if not history and not sup.last_payout_email:
-        s.review.append("First payment to this supplier")
+        s.review.append(reason("first_payment", "review", "First payment to this supplier"))
     # a round amount alone is normal business; it only adds context to an already flagged invoice
     if (s.review or s.blocking) and amt >= ROUND_STEP and amt % ROUND_STEP == 0:
-        s.review.append("Large round amount")
+        s.review.append(reason("round_amount", "review", "Large round amount"))
     return s

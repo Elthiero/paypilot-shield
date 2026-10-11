@@ -12,7 +12,7 @@ import { refreshShell } from "../components/Shell";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
-import { money } from "../lib/format";
+import { money, reasonText } from "../lib/format";
 import type { Invoice, PaymentSummary, Supplier } from "../lib/types";
 
 export default function Invoices() {
@@ -52,7 +52,7 @@ export default function Invoices() {
     setResult(null);
     try {
       const r = await api<PaymentSummary>("/payments", { body: { invoice_number: open.number } });
-      setResult({ ok: r.status !== "BLOCKED", text: `${r.invoice}: ${r.note ?? r.reasons.join("; ")} (${r.status})`, id: r.payment_request_id });
+      setResult({ ok: r.status !== "BLOCKED", text: `${r.invoice}: ${r.note ?? r.reasons.map(reasonText).join("; ")} (${r.status})`, id: r.payment_request_id });
       inv.reload();
       refreshShell();
     } catch (e) {

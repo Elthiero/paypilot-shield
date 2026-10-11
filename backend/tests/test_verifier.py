@@ -11,7 +11,7 @@ def steps(db, r):
 
 def test_no_policy_refuses_to_pay(db, spy):
     r = submit_payment_request(db, "INV-001", paypal=spy)
-    assert r["status"] == "BLOCKED" and r["reasons"] == ["No active signed policy"]
+    assert r["status"] == "BLOCKED" and [x["message"] for x in r["reasons"]] == ["No active signed policy"]
     assert spy.payouts == [] and "verifier_failed" in steps(db, r)
 
 
@@ -24,7 +24,7 @@ def test_expired_policy_refuses(db, spy):
 def test_forged_signature_refuses(db, spy):
     make_policy(db, sign=False)
     r = submit_payment_request(db, "INV-001", paypal=spy)
-    assert r["reasons"] == ["Policy signature invalid"] and spy.payouts == []
+    assert [x["message"] for x in r["reasons"]] == ["Policy signature invalid"] and spy.payouts == []
 
 
 def test_valid_policy_pays_and_audits_verifier(db, spy, policy):
