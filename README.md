@@ -25,7 +25,7 @@ Business email compromise and fake invoices cost companies billions every year. 
 |---|---|---|
 | `AUTO_PAY` | Inside policy and all checks passed | The payout is sent through PayPal |
 | `NEEDS_APPROVAL` | Valid, but above the auto limit or first payment | The owner reviews and signs the exact cart in the browser |
-| `BLOCKED` | A check failed (unverified supplier, changed payee email, injected instructions) | No PayPal call is made, reasons are shown |
+| `BLOCKED` | A check failed (unverified supplier, changed payee email, injected instructions, monthly budget would be exceeded) | No PayPal call is made, reasons are shown |
 
 ## Demo data
 

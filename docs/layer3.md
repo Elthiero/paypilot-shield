@@ -23,7 +23,7 @@ When `LLM_API_KEY` and `LLM_MODEL` are set, `services/classifier.py` asks the mo
 
 ## Reasons
 
-Every reason is `{ code, level, message }`. `level` is `block`, `review` or `info`. Codes: `supplier_unverified`, `payee_email_changed`, `prompt_injection`, `new_payee_email`, `duplicate_invoice`, `amount_outlier`, `round_amount`, `first_payment`, `above_auto_limit`, `budget_exceeded`, `all_clear`, `verifier_refused`. The same objects appear in `reasons` on payments, approvals and the pipeline summary, and in `blocking` and `review` of the `truth_check_done` trace entry. Verifier failures in the `verifier_failed` trace entry stay plain strings. The frontend shows `message` and may key styling on `code`.
+Every reason is `{ code, level, message }`. `level` is `block`, `review` or `info`. Codes: `supplier_unverified`, `payee_email_changed`, `prompt_injection`, `new_payee_email`, `duplicate_invoice`, `amount_outlier`, `round_amount`, `first_payment`, `above_auto_limit`, `budget_exceeded` (level `block`, added by the decision step, not the truth check), `all_clear`, `verifier_refused`. The same objects appear in `reasons` on payments, approvals and the pipeline summary, and in `blocking` and `review` of the `truth_check_done` trace entry. Verifier failures in the `verifier_failed` trace entry stay plain strings. The frontend shows `message` and may key styling on `code`.
 
 ## Tuning
 

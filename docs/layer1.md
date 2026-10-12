@@ -85,8 +85,8 @@ Review:
 
 | Condition | Result | Risk |
 |---|---|---|
-| Any blocking signal | `BLOCKED` | HIGH |
-| Any review signal, amount over the auto limit, or monthly budget exceeded | `NEEDS_APPROVAL` | MEDIUM |
+| Any blocking signal, or the month's spend plus the amount would exceed the monthly budget | `BLOCKED` | HIGH |
+| Any review signal, or amount over the auto limit | `NEEDS_APPROVAL` | MEDIUM |
 | None of the above | `AUTO_PAY` | LOW |
 
 Layer 1 uses default limits from config: `DEFAULT_AUTO_LIMIT` (500) and `DEFAULT_MONTHLY_BUDGET` (5000). Layer 2 replaces them with an owner signed policy.

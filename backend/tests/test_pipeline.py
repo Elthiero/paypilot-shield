@@ -67,6 +67,20 @@ def test_layer3_signal_turns_auto_pay_into_approval(db, spy):
     assert any(x["code"] == "duplicate_invoice" for x in steps["truth_check_done"]["detail"]["review"])
 
 
+def test_over_budget_invoice_is_blocked_with_no_payout_and_no_cart(db, spy):
+    from decimal import Decimal
+    from app.models import Invoice, PaymentRequest
+    db.add(Invoice(number="INV-BIG", supplier_id=1, description="Office supplies", amount=Decimal("6000"),
+                   payee_email="abc@x.test"))
+    db.commit()
+    r = submit_payment_request(db, "INV-BIG", paypal=spy)
+    assert r["decision"] == "BLOCKED" and r["status"] != "AWAITING_APPROVAL"
+    assert any(x["code"] == "budget_exceeded" and x["level"] == "block" for x in r["reasons"])
+    assert spy.payouts == []
+    pr = db.get(PaymentRequest, r["payment_request_id"])
+    assert not pr.cart_payload and not pr.cart_signature
+
+
 def test_payout_batch_id_is_stable_per_request_and_unique_across_a_reset():
     from datetime import datetime
     from types import SimpleNamespace as NS

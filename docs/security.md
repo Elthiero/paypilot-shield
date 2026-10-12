@@ -5,7 +5,7 @@ What protects the money, what was hardened in the review of 12 Oct, and what is 
 ## Model
 
 - The agent can only request a payment. A rules engine decides, and the owner signs policy and approvals in the browser with a non-extractable ECDSA P-256 key (see [layer2.md](layer2.md)).
-- Right before PayPal is called the verifier re-checks the signed policy, the invoice against its frozen snapshot, the budget and a replay guard. Any failure means no PayPal call.
+- A payment that would push the month over the signed budget is BLOCKED at decision time (an approval cannot lift it). Right before PayPal is called the verifier re-checks the signed policy, the invoice against its frozen snapshot, the budget and a replay guard. Any failure means no PayPal call.
 - Layer 3 signals can only raise risk (see [layer3.md](layer3.md)).
 
 ## Hardening in place
