@@ -5,9 +5,9 @@
 @layer base {
   body {
     @apply bg-paper text-ink font-sans antialiased;
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #E4E4DC 31px, #E4E4DC 32px);
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, theme(colors.rule) 31px, theme(colors.rule) 32px);
   }
-  :focus-visible { outline: 3px solid #2347C5; outline-offset: 2px; }
+  :focus-visible { outline: 3px solid theme(colors.blue.mid); outline-offset: 2px; }
   h1 { @apply text-[28px] leading-[34px] font-extrabold; }
   h2 { @apply text-[20px] leading-[28px] font-extrabold; }
   h3 { @apply text-[15px] leading-6 font-bold; }
@@ -21,13 +21,13 @@
   .pixel { @apply font-pixel font-bold tabular-nums; }
   .input { @apply w-full h-11 px-4 bg-card border border-ink rounded shadow-hard font-sans text-[15px]; }
   .btn { @apply inline-flex items-center justify-center gap-2 h-10 px-4 border border-ink rounded font-mono text-xs font-bold uppercase tracking-[0.08em] transition-all duration-100 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0; }
-  .btn-hover { @apply hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_#111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none; }
+  .btn-hover { @apply hover:-translate-x-px hover:-translate-y-px hover:shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-none; }
   .btn-primary { @apply btn btn-hover bg-ink text-white shadow-hard-sm; }
-  .btn-primary::before { content: ""; width: 18px; height: 18px; background: #2347C5; }
+  .btn-primary::before { content: ""; width: 18px; height: 18px; background: theme(colors.blue.DEFAULT); }
   .btn-brand { @apply btn btn-hover bg-blue text-white shadow-hard-sm; }
   .btn-secondary { @apply btn bg-card text-ink text-[11px] hover:bg-butter; }
   .btn-danger { @apply btn btn-hover bg-pink text-ink shadow-hard-sm; }
-  .tape { @apply absolute w-[76px] h-6 pointer-events-none; background: rgba(245, 200, 66, 0.75); }
+  .tape { @apply absolute w-[76px] h-6 pointer-events-none; background: theme(colors.yellow / 75%); }
   .page-in { animation: pagein 160ms ease-out; }
   @keyframes pagein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @keyframes seal { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
@@ -41,15 +41,15 @@
 .ag-theme-quartz {
   --ag-font-family: Inter, system-ui, sans-serif;
   --ag-font-size: 13px;
-  --ag-foreground-color: #111111;
-  --ag-background-color: #FFFFFF;
-  --ag-header-background-color: #F5C842;
-  --ag-header-foreground-color: #111111;
-  --ag-border-color: #111111;
-  --ag-row-border-color: #E4E4DC;
-  --ag-row-hover-color: #FBFBF7;
-  --ag-selected-row-background-color: #FFE9A8;
-  --ag-range-selection-border-color: #2347C5;
+  --ag-foreground-color: theme(colors.ink.DEFAULT);
+  --ag-background-color: theme(colors.card);
+  --ag-header-background-color: theme(colors.yellow.DEFAULT);
+  --ag-header-foreground-color: theme(colors.ink.DEFAULT);
+  --ag-border-color: theme(colors.ink.DEFAULT);
+  --ag-row-border-color: theme(colors.rule);
+  --ag-row-hover-color: theme(colors.paper);
+  --ag-selected-row-background-color: theme(colors.butter);
+  --ag-range-selection-border-color: theme(colors.blue.mid);
   --ag-row-height: 46px;
   --ag-header-height: 44px;
   --ag-cell-horizontal-padding: 16px;

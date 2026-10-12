@@ -1,4 +1,4 @@
-# PayPilot Shield: Design Guide (scrapbook style)
+# PayPilot Shield: Design Guide (scrapbook style, v2.1 payments palette)
 
 It is the visual contract for the frontend described in `docs/FRONTEND.md`. If a screen needs a value that is not here, add it here first, then use it.
 
@@ -33,8 +33,10 @@ Define every color as a token. Never use raw hex in components. Every text and s
 | `paper` | `#FBFBF7` | Page background (with ruled lines) |
 | `rule` | `#E4E4DC` | Ruled lines on the paper background |
 | `card` | `#FFFFFF` | Cards, inputs, nav bar, table body |
-| `blue` | `#2347C5` | Primary action, user chat bubbles, links, step 1 tab |
-| `yellow` | `#F5C842` | Active nav tab, tape, step 2 tab, needs approval |
+| `blue` | `#003087` | Primary action, user chat bubbles, links, step 1 tab (deep payments blue) |
+| `blue-mid` | `#0070BA` | Focus ring, link hover, active icons (mid payments blue) |
+| `cyan` | `#009CDE` | Step tab 3, info dots, decorative accents. Text on it is always `ink` |
+| `yellow` | `#FFC439` | Active nav tab, tape, step 2 tab, needs approval (payments gold) |
 | `pink` | `#FF5FA2` | Logo dot, bot avatar, blocked |
 | `green` | `#4ADE9A` | Auto pay, paid, verified |
 
@@ -45,7 +47,7 @@ Define every color as a token. Never use raw hex in components. Every text and s
 | `mint` | `#C9F2DD` | Soft success fill, sandbox sticker, starter chip |
 | `rose` | `#FFC2DD` | Soft pink fill, starter chip |
 | `butter` | `#FFE9A8` | Selected grid row, soft warning fill |
-| `sky` | `#B9D0FF` | Soft info fill (pending, sent) |
+| `sky` | `#BFE6F7` | Soft info fill (pending, sent) |
 | `blush` | `#FFB3B0` | Soft danger fill for banners |
 
 ### 2.3 Text on color (checked contrast)
@@ -57,15 +59,18 @@ Define every color as a token. Never use raw hex in components. Every text and s
 | `ink` | `green` | 11.0 |
 | `ink` | `mint` | 15.5 |
 | `ink` | `rose` | 12.6 |
-| `ink` | `sky` | 12.2 |
+| `ink` | `sky` | 14.3 |
+| `ink` | `cyan` | 6.1 |
 | `ink` | `blush` | 11.1 |
-| white | `blue` | 7.6 |
+| white | `blue` | 11.9 |
+| white | `blue-mid` | 5.2 |
 | white | `ink` | 18.9 |
-| `blue` (link) | `paper` | 7.3 |
+| `blue` (link) | `paper` | 11.4 |
+| `blue-mid` (focus ring, hover) | `paper` | 5.0 |
 
 Rules:
-- Text on yellow, pink, green and the tints is always `ink`. Never put white text on pink or green (it fails contrast).
-- White text is only allowed on `blue` and `ink`.
+- Text on yellow, pink, green, cyan and the tints is always `ink`. Never put white text on pink, green, yellow or cyan (it fails contrast).
+- White text is only allowed on `blue`, `blue-mid` and `ink`.
 - Color is never the only signal. Every sticker carries an icon and a text label.
 - Large flat areas stay paper or white. Bright color appears on stickers, tabs, tape and the active nav tab.
 
@@ -86,6 +91,38 @@ Rules:
 | Signature valid | Verified | `shield-check` | `green` | `ink` |
 | Signature invalid | Signature invalid | `shield-alert` | `pink` | `ink` |
 | anything else | raw value, title cased | `circle-help` | `card` | `ink` |
+
+### 2.5 Payments palette (v2.1 change)
+
+v2.1 swaps the original blue and yellow for colors inspired by PayPal's own product. Only the palette changes. Shape, type, shadows, components and layout stay exactly as in v2.
+
+| Role | v2 | v2.1 | Inspired by |
+|---|---|---|---|
+| Primary blue | `#2347C5` | `#003087` | PayPal's deep brand blue, used across its business dashboard and wordmark |
+| Mid blue (focus, hover) | none | `#0070BA` | PayPal's mid blue used for links and interactive states |
+| Accent cyan | none | `#009CDE` | PayPal's light brand blue |
+| Gold | `#F5C842` | `#FFC439` | The gold of the PayPal checkout button |
+| Sky tint | `#B9D0FF` | `#BFE6F7` | Soft light blue fill matching the new blues |
+
+Unchanged: `ink`, `paper`, `rule`, `card`, `pink`, `green` and the other tints. Pink stays the Blocked color and green stays Auto pay, so the decision mapping in 2.4 does not change.
+
+Where each reference applies:
+- **Dashboard feel (data screens):** deep `blue` for the nav accents, links and header text weight, `yellow` header row on grids, flat chips.
+- **Checkout feel (approval and signing moments):** `yellow` tape and active states, `blue` primary action, `cyan` accents on the signing modal and the seal.
+
+Brand rules:
+- These are inspired colors, not PayPal's brand assets. Do not use PayPal's logo, wordmark or typeface (PayPal Sans or PayPalOpen) anywhere.
+- Do not present PayPilot Shield as a PayPal product. Keep our own name, logo and the scrapbook style on every screen.
+- Where a real PayPal button is needed, use the official PayPal SDK button unmodified (section 2.6). Never recolor or imitate it.
+- Our `blue` and `yellow` stickers and buttons must stay visibly ours: always keep the 2px black outline, hard shadow and mono caps label so they cannot be mistaken for a PayPal button.
+
+### 2.6 Official PayPal buttons
+
+- Render PayPal buttons only through the PayPal JS SDK. Do not restyle them.
+- On our light paper and white surfaces use the **blue** or **black** PayPal button. PayPal's current guidance says to use blue or black on light backgrounds and white on dark backgrounds. The gold button is being replaced by blue in PayPal's current brand update, so do not design around gold.
+- Give the PayPal button its own white card with 24px clear space on all sides, so it does not sit next to our blue and yellow stickers. Put a mono caps label above it such as `PAY WITH PAYPAL`.
+- Never place a PayPal button inside a taped decision card or rotate it.
+- Allowed text: "Payouts powered by PayPal" in `ink-mute` Small, in the footer or Policy page.
 
 ## 3. Typography
 
@@ -183,7 +220,7 @@ Apply it to the page area. Cards, tables, inputs and modals are solid white on t
 Height 40px (36px small, 50px for chat send). Hover: translate (-1px, -1px) and grow the shadow by 1px. Active: translate (2px, 2px) and shrink the shadow to 0. Disabled: 50 percent opacity, no shadow, `cursor-not-allowed`. Pending: spinner inside, label stays.
 
 ### 6.3 Inputs
-White, 2px `ink` outline, 2px radius, `hard` shadow, 50px height (chat) or 44px (forms), 16px padding. Label above in mono caps 11px. Helper text Small `ink-mute`. Focus: 3px `blue` outline with 2px offset (keep the shadow). Error: outline `ink`, a `pink` banner under the field with `circle-alert` icon and the message.
+White, 2px `ink` outline, 2px radius, `hard` shadow, 50px height (chat) or 44px (forms), 16px padding. Label above in mono caps 11px. Helper text Small `ink-mute`. Focus: 3px `blue-mid` outline with 2px offset (keep the shadow). Error: outline `ink`, a `pink` banner under the field with `circle-alert` icon and the message.
 
 ### 6.4 Cards
 White, 2px `ink` outline, 2px radius, `hard` shadow, 20 to 24px padding. Header: H2 left, optional action right. A card never has a colored left edge (use a sticker instead). Optional tape (6.6).
@@ -192,12 +229,12 @@ White, 2px `ink` outline, 2px radius, `hard` shadow, 20 to 24px padding. Header:
 A small white label box (2px outline, 3px radius, 0 12px padding) in Gaegu 26px bold such as "chat" or "what the agent did", placed above a section. It replaces plain section headings on the home screen. On data pages use H2 instead.
 
 ### 6.6 Tape and polaroid card
-- Tape: two pieces, 76 by 24px, `rgba(245,200,66,0.75)`, rotated -6deg and +5deg, positioned at the top corners overlapping the card edge by 14px.
+- Tape: two pieces, 76 by 24px, `rgba(255,196,57,0.75)`, rotated -6deg and +5deg, positioned at the top corners overlapping the card edge by 14px.
 - Used on the decision card and the signing modal only. Do not tape ordinary cards.
 
 ### 6.7 Step block (trace entry)
 A 2 part block: an angled tab on top and a black body.
-- Tab: JetBrains Mono 11px bold uppercase, padding 7px 24px 7px 14px, with `clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%)`. Tab fill alternates `blue` (white text) and `yellow` (`ink` text), then `pink`, `green` for more steps.
+- Tab: JetBrains Mono 11px bold uppercase, padding 7px 24px 7px 14px, with `clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%)`. Tab fill alternates `blue` (white text) and `yellow` (`ink` text), then `cyan`, `pink`, `green` for more steps (`ink` text on all of them).
 - Body: `ink` background, white text, 14px 16px padding. First line is the tool call in JetBrains Mono 13px, second line a plain summary in `#D9D9D9`.
 
 ### 6.8 Chat bubbles
@@ -214,13 +251,13 @@ Flat and readable. Wrap the grid in a white card (2px outline, `hard` shadow). B
   --ag-font-size: 13px;
   --ag-foreground-color: #111111;
   --ag-background-color: #FFFFFF;
-  --ag-header-background-color: #F5C842;
+  --ag-header-background-color: #FFC439;
   --ag-header-foreground-color: #111111;
   --ag-border-color: #111111;
   --ag-row-border-color: #E4E4DC;
   --ag-row-hover-color: #FBFBF7;
   --ag-selected-row-background-color: #FFE9A8;
-  --ag-range-selection-border-color: #2347C5;
+  --ag-range-selection-border-color: #0070BA;
   --ag-row-height: 46px;
   --ag-header-height: 44px;
   --ag-cell-horizontal-padding: 16px;
@@ -277,7 +314,7 @@ Focus moves into the modal. `Escape` closes it unless signing. Focus returns to 
 A `pink` banner pinned at the top of the content area on every page while the active policy fails verification: `shield-alert` icon, title "Policy signature is invalid", detail "All payments are stopped until you sign a new policy.", and a Primary button "Review policy". The Policy tab in the nav gets a small `pink` dot with a 2px outline.
 
 ### 7.4 Trace timeline (Replay)
-Use step blocks (6.7) stacked with 12px gaps, tab colors cycling `blue`, `yellow`, `pink`, `green`. Each block shows the step label as the tab text, the time in mono Small on the right of the tab row, a one sentence summary, and an expandable raw JSON code block. A failing step gets a `pink` tab. The final block is the decision card (7.1) with the decision chip. No entrance animation on page load.
+Use step blocks (6.7) stacked with 12px gaps, tab colors cycling `blue`, `yellow`, `cyan`, `pink`, `green`. Each block shows the step label as the tab text, the time in mono Small on the right of the tab row, a one sentence summary, and an expandable raw JSON code block. A failing step gets a `pink` tab. The final block is the decision card (7.1) with the decision chip. No entrance animation on page load.
 
 ### 7.5 Chat screen
 - Main column: Section tag "chat", the thread (bubbles 6.8), starter chips, then the input row (input plus Primary Send).
@@ -357,14 +394,15 @@ export default {
         paper: "#FBFBF7",
         rule: "#E4E4DC",
         card: "#FFFFFF",
-        blue: { DEFAULT: "#2347C5" },
-        yellow: { DEFAULT: "#F5C842" },
+        blue: { DEFAULT: "#003087", mid: "#0070BA" },
+        cyan: { DEFAULT: "#009CDE" },
+        yellow: { DEFAULT: "#FFC439" },
         pink: { DEFAULT: "#FF5FA2" },
         green: { DEFAULT: "#4ADE9A" },
         mint: "#C9F2DD",
         rose: "#FFC2DD",
         butter: "#FFE9A8",
-        sky: "#B9D0FF",
+        sky: "#BFE6F7",
         blush: "#FFB3B0",
       },
       fontFamily: {
@@ -397,7 +435,7 @@ Install icons with `npm i lucide-react`. Set `body` classes to `bg-paper text-in
 ## 13. Accessibility rules
 
 - Text contrast at least 4.5:1. The palette above already passes. Keep text on bright fills as `ink`.
-- Visible focus ring on every interactive element: 3px `blue`, offset 2px. Never remove outlines without a replacement.
+- Visible focus ring on every interactive element: 3px `blue-mid`, offset 2px. Never remove outlines without a replacement.
 - Chips and stickers always have a text label. Rotation never changes reading order or hit areas.
 - Gaegu text carries no critical information. Anything important is repeated in Inter.
 - Minimum target size 36px (44px for primary actions).
@@ -418,7 +456,7 @@ Do:
 Do not:
 - Rotate anything inside a table, form, modal or code block.
 - Use more than two Gaegu phrases per screen section.
-- Put white text on pink, green or yellow.
+- Put white text on pink, green, yellow or cyan.
 - Use gradients, blur shadows, glassmorphism or emoji (use Lucide icons).
 - Show a payment button that bypasses the request flow.
 - Use em dashes or en dashes in copy.
@@ -437,6 +475,8 @@ Do not:
 
 ## 16. Open items
 
+- Check the new palette on the approved Agent-screen preview and update the preview artifact to match v2.1.
+- Confirm the focus ring (`blue-mid`) and link colors on every screen before merging.
 - Confirm the logo after a first pass in the app, then export the favicon to `frontend/public/`.
 - Review the Policy and Approvals screens in this style once built, since they carry the most text and forms.
 - If the playful style tests poorly on data screens, tighten section 1 balance rule first (flatter chips, fewer notes) before changing tokens.

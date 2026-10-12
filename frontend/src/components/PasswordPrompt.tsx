@@ -32,7 +32,7 @@ export default function PasswordPrompt({ title, onSubmit, onClose }: { title: st
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(17,17,17,0.55)]" onKeyDown={(e) => e.key === "Escape" && !busy && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/55" onKeyDown={(e) => e.key === "Escape" && !busy && onClose()}>
       <form onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pw-title"
             className="bg-card border border-ink rounded shadow-hard-lg w-[420px] max-w-full p-6 space-y-4">
         <div className="flex items-center gap-3">

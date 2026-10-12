@@ -38,10 +38,10 @@ function One({ e, i, start }: { e: TraceEvent; i: number; start: string }) {
   return (
     <StepBlock index={i} tab={stepLabel(e.step)} right={i > 0 ? `${when(e.at)} (+${duration(start, e.at)})` : when(e.at)} failed={failed}>
       <p className="text-[14px]">{summary(e)}</p>
-      <button className="font-mono text-[12px] underline mt-2 text-[#D9D9D9]" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className="font-mono text-[12px] underline mt-2 text-step" onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? "Hide" : "Show"} raw JSON
       </button>
-      {open && <pre className="font-mono text-[12px] mt-2 whitespace-pre-wrap break-all text-[#D9D9D9]">{JSON.stringify(e.detail, null, 2)}</pre>}
+      {open && <pre className="font-mono text-[12px] mt-2 whitespace-pre-wrap break-all text-step">{JSON.stringify(e.detail, null, 2)}</pre>}
     </StepBlock>
   );
 }

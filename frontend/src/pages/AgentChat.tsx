@@ -125,7 +125,7 @@ export default function AgentChat() {
           {last?.trace.map((t, i) => (
             <StepBlock key={i} index={i} tab={t.tool} failed={t.tool === "llm_error"}>
               <p className="font-mono text-[13px] break-all">{JSON.stringify(t.input ?? {})}</p>
-              <p className="text-[13px] text-[#D9D9D9] mt-1 break-words">{toolSummary(t)}</p>
+              <p className="text-[13px] text-step mt-1 break-words">{toolSummary(t)}</p>
             </StepBlock>
           ))}
         </aside>

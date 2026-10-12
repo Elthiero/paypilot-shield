@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-const TABS = ["bg-blue text-white", "bg-yellow text-ink", "bg-pink text-ink", "bg-green text-ink"];
+const TABS = ["bg-blue text-white", "bg-yellow text-ink", "bg-cyan text-ink", "bg-pink text-ink", "bg-green text-ink"];
 
 interface Props { index: number; tab: string; right?: ReactNode; failed?: boolean; children: ReactNode; }
 

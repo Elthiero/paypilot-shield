@@ -49,8 +49,8 @@ export default function Shell() {
     <div className="min-h-screen">
       <header className="bg-card border-b border-ink h-12 flex items-stretch px-3 sm:px-4 sticky top-0 z-40">
         <div className="flex items-center gap-2 pr-3 sm:pr-6">
-          <span className="w-[26px] h-[26px] rounded-full bg-pink border border-ink flex items-center justify-center" aria-hidden>
-            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7.5l3.2 3.2L12 3.5" fill="none" stroke="#111" strokeWidth="3" /></svg>
+          <span className="w-[26px] h-[26px] rounded-full bg-pink text-ink border border-ink flex items-center justify-center" aria-hidden>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7.5l3.2 3.2L12 3.5" fill="none" stroke="currentColor" strokeWidth="3" /></svg>
           </span>
           <span className="font-pixel font-bold text-sm hidden sm:inline">PAYPILOT</span>
         </div>

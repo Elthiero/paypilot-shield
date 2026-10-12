@@ -60,7 +60,7 @@ export default function SigningModal({ title = "Sign with your key", confirmLabe
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(17,17,17,0.55)]" onKeyDown={onKey}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/55" onKeyDown={onKey}>
       <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="sign-title"
            className="relative bg-card border border-ink rounded shadow-hard-lg w-[560px] max-w-full p-6 pt-8"
            style={{ animation: "pagein 200ms cubic-bezier(0.2,0,0,1)" }}>
