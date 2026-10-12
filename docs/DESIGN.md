@@ -90,6 +90,11 @@ Rules:
 | Risk `HIGH` | High risk | `gauge` | `ink` | white |
 | Signature valid | Verified | `shield-check` | `green` | `ink` |
 | Signature invalid | Signature invalid | `shield-alert` | `pink` | `ink` |
+| `SUCCESS` | Success | `badge-check` | `green` | `ink` |
+| `ACTIVE` | Active | `circle-check` | `green` | `ink` |
+| `REJECTED` | Rejected | `ban` | `pink` | `ink` |
+| `EXPIRED` | Expired | `clock` | `butter` | `ink` |
+| `FAILED` | Failed | `circle-x` | `pink` | `ink` |
 | anything else | raw value, title cased | `circle-help` | `card` | `ink` |
 
 ### 2.5 Payments palette (v2.1 change)
