@@ -63,6 +63,8 @@ Run in a scratch Playwright script against the Docker stack with the fake PayPal
 - Under `/paypilot/`: login, the `/paypilot/approvals` deep link and a reload on it, every API call went to `/paypilot/api/`, no failed requests.
 - Payout polling: with a mocked `PENDING` payout the page called refresh, showed `SUCCESS` without a click, and removed the note.
 
+The full demo path also ran once on the real PayPal sandbox (see `docs/devlog.md`, 12 Oct): two payouts sent and confirmed, two blocked, tamper refused. The Duration column shows the time until the app saw `SUCCESS`, which includes the wait for the next refresh, not PayPal's own processing time.
+
 Backend tests cover the matcher, status filter, "pay all pending" and `/health` (`tests/test_agent_rules.py`, `tests/test_api.py`).
 
 ## Known gaps
