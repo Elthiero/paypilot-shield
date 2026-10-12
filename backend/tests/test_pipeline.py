@@ -65,3 +65,20 @@ def test_layer3_signal_turns_auto_pay_into_approval(db, spy):
     assert r["decision"] == "NEEDS_APPROVAL" and len(spy.payouts) == 1
     steps = {e["step"]: e for e in get_trace(db, r["payment_request_id"])}
     assert any(x["code"] == "duplicate_invoice" for x in steps["truth_check_done"]["detail"]["review"])
+
+
+def test_payout_batch_id_is_stable_per_request_and_unique_across_a_reset():
+    from datetime import datetime
+    from types import SimpleNamespace as NS
+    from app.services.pipeline import sender_batch_id
+    first = NS(id=1, created_at=datetime(2026, 10, 12, 8, 0, 0))
+    again = NS(id=1, created_at=datetime(2026, 10, 12, 8, 0, 0))
+    after_reset = NS(id=1, created_at=datetime(2026, 10, 16, 9, 30, 0))  # seed.py restarted ids at 1
+    assert sender_batch_id(first) == sender_batch_id(again)  # a retry reuses it, so PayPal refuses a second payout
+    assert sender_batch_id(first) != sender_batch_id(after_reset)
+    assert len(sender_batch_id(NS(id=999999, created_at=datetime(2026, 10, 12)))) <= 30  # PayPal's limit
+
+
+def test_payout_uses_that_batch_id(db, spy):
+    submit_payment_request(db, "INV-001", paypal=spy)
+    assert spy.payouts[0][0].startswith("pp1-")

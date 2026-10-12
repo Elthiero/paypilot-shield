@@ -13,7 +13,7 @@ What protects the money, what was hardened in the review of 12 Oct, and what is 
 | Area | What |
 |---|---|
 | Environment | `APP_ENV` defaults to `production`. The `/dev` tamper routes are mounted only with `APP_ENV=development`. Outside development the API refuses to start unless `JWT_SECRET` has at least 32 characters and `DEMO_PASSWORD` at least 12 (not the defaults) |
-| Double payment | Approving a request and evaluating an invoice each claim their row atomically (`UPDATE ... WHERE status = ...`). The PayPal batch id is `pp{request id}`, so PayPal refuses a second batch for the same request |
+| Double payment | Approving a request and evaluating an invoice each claim their row atomically (`UPDATE ... WHERE status = ...`). The PayPal batch id is `pp{request id}-{request creation time}`: the same for every attempt on one request, so PayPal refuses a second batch for it, and still unique after `seed.py` restarts ids at 1 |
 | Signing key | Replacing a registered key needs the password (`POST /auth/register-key` returns 403 otherwise). A stolen login token alone cannot take over signing |
 | Login | 5 failed attempts in 5 minutes per client IP and email returns 429. Bcrypt runs for unknown emails too, so timing does not reveal which emails exist |
 | Input limits | Chat and policy text 2000 characters, size limits on login, key, signature and reject fields, currency `[A-Z]{3}`, policy valid for at most 366 days, old unsigned drafts are deleted on each prepare |

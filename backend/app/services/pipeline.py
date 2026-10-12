@@ -1,4 +1,5 @@
 """The request pipeline. Plain Python, no LLM. Layer 1 has no signatures yet."""
+import calendar
 import hashlib
 import json
 import time
@@ -109,6 +110,13 @@ def refresh_transaction(db, txn: Transaction, paypal) -> Transaction:
     return txn
 
 
+def sender_batch_id(pr: PaymentRequest) -> str:
+    """PayPal's sender_batch_id. Same for every attempt on one request, so PayPal refuses a second payout for it.
+    The creation time keeps it unique across a database reset (seed.py restarts request ids at 1), and
+    the whole id stays under PayPal's 30 character limit."""
+    return f"pp{pr.id}-{calendar.timegm(pr.created_at.utctimetuple())}"
+
+
 def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = True) -> None:
     """The only place in the codebase that moves money. The verifier runs here, so no caller can skip it."""
     mandate, user = active_policy(db)
@@ -122,7 +130,7 @@ def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = Tr
         audit(db, pr.id, "verifier_failed", {"failures": failures, "paypal_called": False})
         return
     audit(db, pr.id, "verifier_passed", {"mandate_id": mandate.id})
-    batch_id = f"pp{pr.id}"  # one payout per request: PayPal refuses a second batch with the same id
+    batch_id = sender_batch_id(pr)
     try:
         resp = paypal.send_payout(batch_id, pr.payee_email, Decimal(pr.amount), pr.currency,
                                   f"Invoice {inv.number}")
