@@ -8,7 +8,7 @@ Layer 3 adds fraud signals to the truth check (`backend/app/services/truth_check
 |---|---|---|
 | Supplier not verified | Blocking | `supplier.verified` is false (Layer 1) |
 | Payee email changed | Blocking | Invoice payee differs from the supplier's last successful payout email (Layer 1) |
-| Prompt injection | Blocking | Invoice description, number or supplier name matches a phrase in `PATTERNS`. Text is normalised first (Unicode lookalikes, zero-width characters, extra spaces, case) |
+| Prompt injection | Blocking | Invoice description, number or supplier name matches a phrase in `PATTERNS`. Text is normalised first (Unicode lookalikes, zero-width characters, extra spaces, case, accents). Patterns cover English and French. Other languages are a known gap |
 | New payee email | Review | Supplier has no payout history yet and the invoice payee differs from the registered PayPal email |
 | Duplicate invoice | Review | Another invoice from the same supplier has an amount within 1% and is not `PENDING` or `BLOCKED` |
 | Amount outlier | Review | Amount is more than 3x the supplier's median successful payout (needs at least 2 payouts) |

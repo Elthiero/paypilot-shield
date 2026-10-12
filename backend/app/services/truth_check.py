@@ -17,6 +17,22 @@ PATTERNS = [
     r"(change|update|use) (the )?(payee|bank|paypal|payment) (email|details|account)",
     r"do not (flag|verify|check|review)",
     r"(approved|authorized) by (the )?(ceo|cfo|owner|manager)",
+    # French. normalize() strips accents, so these are written without them.
+    r"(ignor\w+|oubli\w+|ne (tenez|tiens) pas compte|ne pas tenir compte) (de |des |d')?(toutes |tous |l')?(les |la |l')?"
+    r"(instructions?|regles?|politiques?) (precedent\w*|anterieur\w*|ci-dessus|ci dessus)",
+    r"(ignor\w+|oubli\w+) (tout|toutes|tous) (les |l')?(precedent\w*|anterieur\w*|ci-dessus)",
+    r"(ignor\w+|oubli\w+) tout ce qui (precede|vient avant)",
+    r"\b(payez|payer)( ceci| cela| cette facture| la facture| le tout)? (immediatement|maintenant|tout de suite)",
+    r"(contourn\w+|outrepass\w+) (la |les |votre |vos )?(politique|limite|regles)",
+    r"(tu es|vous etes) (maintenant |desormais )?(un|une) (assistante?|ia|agent|intelligence artificielle)\b",
+    r"\b(invite|prompt) systeme",
+    r"(chang\w+|modifi\w+|utilis\w+|mett\w+ a jour) (l'|le |la |les |ces |nos |mes |votre |vos )?"
+    r"(email|e-mail|courriel|adresse e-?mail|compte) (de paiement|du beneficiaire|du fournisseur|paypal|bancaire)",
+    r"(chang\w+|modifi\w+|utilis\w+|mett\w+ a jour) (les |ces |nos |mes |vos )?coordonnees (bancaires|de paiement)",
+    r"(chang\w+|modifi\w+|utilis\w+|mett\w+ a jour) (le |l'|votre )?(rib|iban)\b",
+    r"\bne pas (verifier|signaler|controler|examiner)\b",
+    r"\bne (verifiez|signalez|controlez|examinez) pas\b",
+    r"(approuvee?|autorisee?) par (le |la |l')?(pdg|dg|directeur financier|directrice financiere|proprietaire|gerante?)\b",
 ]
 OUTLIER_FACTOR = 3  # amount above this many times the supplier's median payout is flagged
 MIN_HISTORY = 2
@@ -26,8 +42,10 @@ _INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u200e\u200f\u2060\ufeff\
 
 
 def normalize(text: str) -> str:
-    """Defeat cheap evasions: lookalike Unicode, zero-width characters, odd spacing, case."""
-    return " ".join(unicodedata.normalize("NFKC", text).translate(_INVISIBLE).casefold().split())
+    """Defeat cheap evasions: lookalike Unicode, zero-width characters, odd spacing, case, accents."""
+    t = unicodedata.normalize("NFKC", text).translate(_INVISIBLE).casefold().replace("\u2019", "'")
+    t = "".join(c for c in unicodedata.normalize("NFD", t) if not unicodedata.combining(c))
+    return " ".join(t.split())
 
 
 def reason(code: str, level: str, message: str) -> dict:
