@@ -17,12 +17,13 @@ interface Props<T> {
 export default function OpsGrid<T>({ rows, cols, loading, empty, onRowClicked, height = 460 }: Props<T>) {
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, flex: 1, minWidth: 110 }), []);
   if (loading && !rows) return <Skeleton rows={5} />;
-  if (rows && rows.length === 0) return <EmptyState {...empty} />;
+  if (!rows) return null; // error: the page shows ErrorState
+  if (rows.length === 0) return <EmptyState {...empty} />;
   return (
     <div className="card !p-0 overflow-hidden">
       <div className="ag-theme-quartz" style={{ height, width: "100%" }}>
         <AgGridReact<T>
-          rowData={rows ?? []}
+          rowData={rows}
           columnDefs={cols}
           defaultColDef={defaultColDef}
           animateRows={false}

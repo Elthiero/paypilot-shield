@@ -69,12 +69,12 @@ export default function Invoices() {
       <PageHeader note="your invoices" title="Invoices" text="Everything waiting to be paid. Open one to request payment."
         action={<Button onClick={() => setAdding(true)}><Plus size={14} aria-hidden />New invoice</Button>} />
       {inv.error && <ErrorState message={inv.error} onRetry={inv.reload} />}
-      <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Filter by status">
+      {!inv.error && <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Filter by status">
         {statuses.map((s) => (
           <button key={s} onClick={() => setFilter(s)} aria-pressed={filter === s}
             className={`label border border-ink rounded px-2.5 py-1 ${filter === s ? "bg-yellow" : "bg-card hover:bg-butter"}`}>{s === "ALL" ? "All" : s.replace(/_/g, " ")}</button>
         ))}
-      </div>
+      </div>}
       <OpsGrid rows={inv.error ? null : rows} cols={cols} loading={inv.loading} onRowClicked={(r) => { setOpen(r); setResult(null); }}
         empty={{ note: "no invoices", text: "Nothing matches this filter." }} />
       {adding && <NewInvoiceDrawer suppliers={sup.data ?? []} onClose={() => setAdding(false)}

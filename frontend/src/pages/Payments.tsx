@@ -85,9 +85,9 @@ export default function Payments() {
     <div>
       <PageHeader note="the money trail" title="Payments" text="Every request and every payout, with its decision." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Stat label="Paid total" value={money(paid)} fill="bg-green" icon={<BadgeCheck size={32} aria-hidden />} />
-        <Stat label="Awaiting approval" value={awaiting} fill="bg-yellow" icon={<Hourglass size={32} aria-hidden />} />
-        <Stat label="Blocked" value={blocked} fill="bg-pink" icon={<ShieldX size={32} aria-hidden />} />
+        <Stat label="Paid total" value={txns.loading && !txns.data ? "-" : money(paid)} fill="bg-green" icon={<BadgeCheck size={32} aria-hidden />} />
+        <Stat label="Awaiting approval" value={reqs.loading && !reqs.data ? "-" : awaiting} fill="bg-yellow" icon={<Hourglass size={32} aria-hidden />} />
+        <Stat label="Blocked" value={reqs.loading && !reqs.data ? "-" : blocked} fill="bg-pink" icon={<ShieldX size={32} aria-hidden />} />
       </div>
       <TotalPaidChart txns={txns.data ?? []} />
       <div className="flex mb-4" role="tablist">
