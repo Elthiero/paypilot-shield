@@ -32,4 +32,4 @@ Tests: `backend/tests/test_security.py`.
 - All data endpoints are single tenant. Approvals and payments are not scoped to a user, so multi-user roles would need that first.
 - Replacing the signing key asks for the password with `window.prompt`, which shows the text on screen.
 - The PayPal webhook is not built. When it is: verify PayPal's signature before trusting the body, and make the handler idempotent.
-- Behind a second proxy (for example a host nginx with TLS in front of the frontend container) every client shares one address unless `real_ip_header` and `set_real_ip_from` are set in `frontend/nginx.conf`.
+- Behind a second proxy (host nginx with TLS): `frontend/nginx.conf` trusts `X-Forwarded-For` from the compose subnet `172.28.0.0/24` only. The host nginx must send `proxy_set_header X-Forwarded-For $remote_addr;`. Check the subnet with `docker network inspect` and adjust `set_real_ip_from` if it differs.
