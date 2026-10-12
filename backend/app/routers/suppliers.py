@@ -1,23 +1,53 @@
 from collections import Counter
 from statistics import median
 
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user
 from ..models import Invoice, PaymentRequest, Supplier, Transaction
+from ..services.audit import audit
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"], dependencies=[Depends(current_user)])
 
 
+class SupplierIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    paypal_email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    country: str = Field("US", pattern=r"^[A-Z]{2}$")
+
+
+def supplier_dict(s: Supplier):
+    return {"id": s.id, "name": s.name, "paypal_email": s.paypal_email, "verified": s.verified,
+            "last_payout_email": s.last_payout_email, "country": s.country}
+
+
+@router.post("", status_code=201)
+def create_supplier(body: SupplierIn, db: Session = Depends(get_db), user=Depends(current_user)):
+    sup = Supplier(name=body.name.strip(), paypal_email=body.paypal_email.strip(), country=body.country, verified=False)
+    db.add(sup)
+    db.flush()
+    audit(db, None, "supplier_created", {"supplier_id": sup.id, "name": sup.name, "by": user.email})
+    db.commit()
+    return supplier_dict(sup)
+
+
+@router.post("/{supplier_id}/verify")
+def verify_supplier(supplier_id: int, db: Session = Depends(get_db), user=Depends(current_user)):
+    sup = db.get(Supplier, supplier_id)
+    if not sup:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    sup.verified = True
+    audit(db, None, "supplier_verified", {"supplier_id": sup.id, "by": user.email})
+    db.commit()
+    return supplier_dict(sup)
+
+
 @router.get("")
 def list_suppliers(db: Session = Depends(get_db)):
-    return [
-        {"id": s.id, "name": s.name, "paypal_email": s.paypal_email, "verified": s.verified,
-         "last_payout_email": s.last_payout_email, "country": s.country}
-        for s in db.query(Supplier).order_by(Supplier.id)
-    ]
+    return [supplier_dict(s) for s in db.query(Supplier).order_by(Supplier.id)]
 
 
 @router.get("/{supplier_id}/analytics")

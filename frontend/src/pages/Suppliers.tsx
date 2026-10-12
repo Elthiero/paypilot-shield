@@ -1,7 +1,9 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { TriangleAlert } from "lucide-react";
+import { Plus, TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import AddSupplierDrawer from "../components/AddSupplierDrawer";
 import Banner from "../components/Banner";
+import Button from "../components/Button";
 import Drawer from "../components/Drawer";
 import ErrorState from "../components/ErrorState";
 import OpsGrid from "../components/OpsGrid";
@@ -9,6 +11,7 @@ import PageHeader from "../components/PageHeader";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
+import { ApiError, api } from "../lib/api";
 import { money, stepLabel, when } from "../lib/format";
 import type { Supplier, SupplierAnalytics } from "../lib/types";
 
@@ -55,14 +58,31 @@ function PayoutChart({ payments, median }: { payments: SupplierAnalytics["paymen
   );
 }
 
-function Analytics({ id, onClose }: { id: number; onClose: () => void }) {
-  const { data: a, loading, error } = useApi<SupplierAnalytics>(`/suppliers/${id}/analytics`);
+function Analytics({ id, onClose, onVerified }: { id: number; onClose: () => void; onVerified: () => void }) {
+  const { data: a, loading, error, reload } = useApi<SupplierAnalytics>(`/suppliers/${id}/analytics`);
+  const [busy, setBusy] = useState(false);
+  const [verr, setVerr] = useState<string | null>(null);
+  const verify = async () => {
+    setBusy(true);
+    setVerr(null);
+    try {
+      await api(`/suppliers/${id}/verify`, { method: "POST", body: {} });
+      reload();
+      onVerified();
+    } catch (err) {
+      setVerr(err instanceof ApiError ? err.detail : "Could not reach the server.");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Drawer title={a?.supplier.name ?? "Supplier"} onClose={onClose}>
       {loading && <Skeleton rows={3} />}
       {error && <Banner kind="error" title="Could not load this supplier">{error}</Banner>}
       {a && (
         <div className="space-y-4">
+          {!a.supplier.verified && <Button onClick={verify} loading={busy}>Verify supplier</Button>}
+          {verr && <Banner kind="error" title={verr} />}
           <dl className="grid grid-cols-2 gap-3 text-[14px]">
             <div><dt className="label">Paid</dt><dd className="money">{money(a.paid_total)} in {a.paid_count}</dd></div>
             <div><dt className="label">Median payout</dt><dd className="money">{a.paid_median === null ? "None yet" : money(a.paid_median)}</dd></div>
@@ -92,13 +112,16 @@ function Analytics({ id, onClose }: { id: number; onClose: () => void }) {
 
 export default function Suppliers() {
   const [open, setOpen] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
   const { data, loading, error, reload } = useApi<Supplier[]>("/suppliers");
   return (
     <div>
-      <PageHeader note="who you pay" title="Suppliers" text="Verified suppliers and the email each one was last paid at. Open one for its payment history." />
+      <PageHeader note="who you pay" title="Suppliers" text="Verified suppliers and the email each one was last paid at. Open one for its payment history."
+        action={<Button onClick={() => setAdding(true)}><Plus size={14} aria-hidden />Add supplier</Button>} />
       {error && <ErrorState message={error} onRetry={reload} />}
       <OpsGrid rows={error ? null : data} cols={cols} loading={loading} onRowClicked={(r) => setOpen(r.id)} empty={{ note: "no suppliers", text: "Seed the demo data to see suppliers." }} />
-      {open !== null && <Analytics id={open} onClose={() => setOpen(null)} />}
+      {open !== null && <Analytics id={open} onClose={() => setOpen(null)} onVerified={reload} />}
+      {adding && <AddSupplierDrawer onClose={() => setAdding(false)} onCreated={() => { setAdding(false); reload(); }} />}
     </div>
   );
 }

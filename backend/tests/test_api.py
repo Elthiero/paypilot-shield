@@ -80,3 +80,11 @@ def test_create_invoice_validation_and_injection(client):
     pay = client.post("/payments", json={"invoice_number": evil["number"]}, headers=h).json()
     assert pay["status"] == "BLOCKED"
 
+
+
+def test_add_and_verify_supplier(client):
+    auth = login(client)
+    r = client.post("/suppliers", json={"name": "NewCo", "paypal_email": "a@b.co", "country": "GB"}, headers=auth)
+    assert r.status_code == 201 and r.json()["verified"] is False
+    r = client.post(f"/suppliers/{r.json()['id']}/verify", headers=auth)
+    assert r.json()["verified"] is True
