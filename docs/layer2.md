@@ -37,6 +37,7 @@ It runs inside `execute_payout`, so no caller can skip it. `execute_payout` is s
 | Live invoice hash equals the snapshot | Invoice changed after evaluation |
 | Live payee equals the snapshot | Payee changed after evaluation |
 | Live amount equals the snapshot | Amount changed after evaluation |
+| `AUTO_PAY` amount within the signed auto limit | Amount above the signed auto limit |
 | Currency allowed by the policy | Currency not allowed by policy |
 | Cart matches the invoice (approvals) | Cart no longer matches the invoice |
 | Cart not past its expiry (approvals) | Approval expired |

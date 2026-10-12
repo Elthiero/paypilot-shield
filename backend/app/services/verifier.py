@@ -27,6 +27,9 @@ def verify_before_payment(pr, inv, live_hash: str, spent: Decimal, mandate, user
     if rules and pr.currency != rules.get("currency", "USD"):
         f.append("Currency not allowed by policy")
 
+    if pr.decision == "AUTO_PAY" and rules and Decimal(pr.amount) > Decimal(str(rules["auto_limit"])):
+        f.append("Amount above the signed auto limit")  # decide() should never allow this, so check it again here
+
     if pr.decision == "NEEDS_APPROVAL":
         expires = json.loads(pr.cart_payload).get("expires_at", "") if pr.cart_payload else ""
         if not mandate or not expires or pr.cart_payload != build_cart_payload(mandate.id, inv.number, pr, expires):

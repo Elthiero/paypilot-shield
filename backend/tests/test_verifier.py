@@ -67,3 +67,12 @@ def test_budget_is_enforced_by_verifier(db, spy, policy):
     pr.amount = Decimal("6000")  # snapshot above the signed 5000 budget
     execute_payout(db, pr, db.query(Invoice).filter_by(number="INV-003").first(), spy)
     assert "Monthly budget exceeded" in get_trace(db, pr.id)[-1]["detail"]["failures"]
+
+
+def test_auto_pay_above_the_signed_limit_is_refused_by_verifier(db, spy, policy):
+    r = submit_payment_request(db, "INV-003", paypal=spy)  # 1500 is over the signed 500 limit, so approval
+    pr = db.get(PaymentRequest, r["payment_request_id"])
+    pr.decision = "AUTO_PAY"  # as if decide() had wrongly let it through
+    execute_payout(db, pr, db.query(Invoice).filter_by(number="INV-003").first(), spy)
+    assert "Amount above the signed auto limit" in get_trace(db, pr.id)[-1]["detail"]["failures"]
+    assert pr.status == "BLOCKED" and spy.payouts == []
