@@ -60,12 +60,12 @@ export default function Payments() {
     { field: "id", headerName: "ID", maxWidth: 90 },
     { field: "invoice", headerName: "Invoice", maxWidth: 130 },
     { field: "amount", headerName: "Amount", type: "rightAligned", maxWidth: 130, valueFormatter: (p) => money(p.value), cellClass: "money" },
-    { field: "decision", headerName: "Decision", minWidth: 170, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
-    { field: "risk", headerName: "Risk", minWidth: 140, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
+    { field: "decision", headerName: "Decision", minWidth: 210, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
+    { field: "risk", headerName: "Risk", minWidth: 165, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { field: "reasons", headerName: "Reasons", minWidth: 260, sortable: false,
       valueFormatter: (p) => { const r: Reason[] = p.value ?? []; return r.length ? reasonText(r[0]) + (r.length > 1 ? ` (+${r.length - 1})` : "") : ""; } },
     { field: "created_at", headerName: "Requested", minWidth: 190, valueFormatter: (p) => when(p.value) },
-    { field: "status", headerName: "Status", minWidth: 170, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
+    { field: "status", headerName: "Status", minWidth: 210, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => <StatusBadge value={p.value} /> },
     { headerName: "", maxWidth: 110, sortable: false, cellRenderer: (p: ICellRendererParams<PaymentRequest>) => p.data && <Link className="text-blue underline" to={`/replay/${p.data.id}`}>Replay</Link> },
   ];
   const txCols: ColDef<Transaction>[] = [

@@ -36,12 +36,12 @@ export default function Invoices() {
 
   const cols: ColDef<Invoice>[] = [
     { field: "number", headerName: "Number", maxWidth: 130 },
-    { field: "supplier", headerName: "Supplier" },
+    { field: "supplier", headerName: "Supplier", minWidth: 170 },
     { field: "supplier_verified", headerName: "Verified", maxWidth: 120, sortable: false,
       cellRenderer: (p: ICellRendererParams<Invoice>) => p.value ? <span className="flex items-center gap-1"><BadgeCheck size={16} aria-hidden />Yes</span> : <span className="flex items-center gap-1 text-ink-mute"><TriangleAlert size={16} aria-hidden />No</span> },
     { field: "amount", headerName: "Amount", type: "rightAligned", maxWidth: 140,
       valueFormatter: (p) => money(p.value, p.data?.currency), cellClass: "money" },
-    { field: "status", headerName: "Status", minWidth: 170, cellRenderer: (p: ICellRendererParams<Invoice>) => <StatusBadge value={p.value} /> },
+    { field: "status", headerName: "Status", minWidth: 210, cellRenderer: (p: ICellRendererParams<Invoice>) => <StatusBadge value={p.value} /> },
     { field: "payee_email", headerName: "Payee email", minWidth: 240,
       cellRenderer: (p: ICellRendererParams<Invoice>) => p.data && mismatch(p.data)
         ? <span className="flex items-center gap-1.5 font-semibold" title="Differs from the supplier's last payout email"><TriangleAlert size={16} aria-hidden /><span className="sr-only">Differs from the last payout email. </span>{p.value}</span>
