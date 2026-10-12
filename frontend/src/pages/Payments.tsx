@@ -17,8 +17,8 @@ import type { PaymentRequest, Reason, Transaction } from "../lib/types";
 function Stat({ label, value, icon, fill }: { label: string; value: ReactNode; icon: ReactNode; fill: string }) {
   return (
     <div className="card flex items-center justify-between">
-      <div className="min-w-0"><p className="label text-ink-mute">{label}</p><p className="font-pixel font-bold text-[28px] leading-10 money">{value}</p></div>
-      <span className={`w-12 h-12 shrink-0 ml-3 rounded-full border border-ink flex items-center justify-center ${fill}`}>{icon}</span>
+      <div className="min-w-0"><p className="label text-ink-mute">{label}</p><p className="font-pixel font-bold text-[32px] leading-10 money">{value}</p></div>
+      <span className={`w-16 h-16 shrink-0 ml-3 rounded-full border border-ink flex items-center justify-center ${fill}`}>{icon}</span>
     </div>
   );
 }
@@ -85,9 +85,9 @@ export default function Payments() {
     <div>
       <PageHeader note="the money trail" title="Payments" text="Every request and every payout, with its decision." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Stat label="Paid total" value={money(paid)} fill="bg-green" icon={<BadgeCheck size={24} aria-hidden />} />
-        <Stat label="Awaiting approval" value={awaiting} fill="bg-yellow" icon={<Hourglass size={24} aria-hidden />} />
-        <Stat label="Blocked" value={blocked} fill="bg-pink" icon={<ShieldX size={24} aria-hidden />} />
+        <Stat label="Paid total" value={money(paid)} fill="bg-green" icon={<BadgeCheck size={32} aria-hidden />} />
+        <Stat label="Awaiting approval" value={awaiting} fill="bg-yellow" icon={<Hourglass size={32} aria-hidden />} />
+        <Stat label="Blocked" value={blocked} fill="bg-pink" icon={<ShieldX size={32} aria-hidden />} />
       </div>
       <TotalPaidChart txns={txns.data ?? []} />
       <div className="flex mb-4" role="tablist">
@@ -97,7 +97,7 @@ export default function Payments() {
         ))}
       </div>
       {err && <ErrorState message={err} onRetry={() => { reqs.reload(); txns.reload(); }} />}
-      {polling && <p className="note mb-2">a payout is still pending. checking PayPal every 5 seconds.</p>}
+      {polling && <p className="text-[13px] text-ink-mute mb-2" aria-live="polite">A payout is still pending. Checking PayPal every 5 seconds.</p>}
       {tab === "requests"
         ? <OpsGrid rows={reqs.error ? null : reqs.data} cols={reqCols} loading={reqs.loading} empty={{ note: "no payments yet", text: "Ask the agent to pay an invoice to see its decision here." }} />
         : <OpsGrid rows={txns.error ? null : txns.data} cols={txCols} loading={txns.loading} empty={{ note: "no payouts yet", text: "Payouts appear after a payment is sent to PayPal." }} />}

@@ -1,10 +1,12 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import Banner from "../components/Banner";
 import Drawer from "../components/Drawer";
 import ErrorState from "../components/ErrorState";
 import OpsGrid from "../components/OpsGrid";
 import PageHeader from "../components/PageHeader";
+import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { money, stepLabel, when } from "../lib/format";
@@ -17,7 +19,7 @@ const cols: ColDef<Supplier>[] = [
   { field: "country", headerName: "Country", maxWidth: 120 },
   { field: "paypal_email", headerName: "PayPal email", minWidth: 240 },
   { field: "verified", headerName: "Verified", maxWidth: 150,
-    cellRenderer: (p: ICellRendererParams<Supplier>) => <StatusBadge value={p.value ? "VERIFIED" : "PENDING"} /> },
+    cellRenderer: (p: ICellRendererParams<Supplier>) => <StatusBadge value={p.value ? "VERIFIED" : "UNVERIFIED"} /> },
   { field: "last_payout_email", headerName: "Last payout email", minWidth: 240,
     cellRenderer: (p: ICellRendererParams<Supplier>) => p.data && differs(p.data)
       ? <span className="flex items-center gap-1.5 font-semibold" title="Differs from the PayPal email on file"><TriangleAlert size={16} aria-hidden /><span className="sr-only">Differs from the email on file. </span>{p.value}</span>
@@ -57,8 +59,8 @@ function Analytics({ id, onClose }: { id: number; onClose: () => void }) {
   const { data: a, loading, error } = useApi<SupplierAnalytics>(`/suppliers/${id}/analytics`);
   return (
     <Drawer title={a?.supplier.name ?? "Supplier"} onClose={onClose}>
-      {loading && <p>Loading…</p>}
-      {error && <p role="alert">{error}</p>}
+      {loading && <Skeleton rows={3} />}
+      {error && <Banner kind="error" title="Could not load this supplier">{error}</Banner>}
       {a && (
         <div className="space-y-4">
           <dl className="grid grid-cols-2 gap-3 text-[14px]">

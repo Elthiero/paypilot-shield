@@ -1,7 +1,10 @@
-import { Bot, Send } from "lucide-react";
+import { Check, PenLine, Send } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import Banner from "../components/Banner";
 import Button from "../components/Button";
+import SectionTag from "../components/SectionTag";
+import StatusBadge from "../components/StatusBadge";
 import DecisionCard from "../components/DecisionCard";
 import StepBlock from "../components/StepBlock";
 import { refreshShell } from "../components/Shell";
@@ -9,7 +12,7 @@ import { ApiError, api } from "../lib/api";
 import { money } from "../lib/format";
 import type { AgentReply, AgentToolCall, PaymentSummary } from "../lib/types";
 
-interface Msg { role: "user" | "agent"; text: string; reply?: AgentReply; }
+interface Msg { role: "user" | "agent"; text: string; reply?: AgentReply; error?: boolean; }
 
 const STARTERS: [string, string, string][] = [
   ["Pay INV-001", "bg-yellow", "-rotate-2"],
@@ -60,7 +63,7 @@ export default function AgentChat() {
       setMsgs((m) => [...m, { role: "agent", text: reply.reply, reply }]);
       refreshShell();
     } catch (e) {
-      setMsgs((m) => [...m, { role: "agent", text: e instanceof ApiError ? e.detail : "I could not reach the server." }]);
+      setMsgs((m) => [...m, { role: "agent", error: true, text: e instanceof ApiError ? e.detail : "I could not reach the server." }]);
     } finally {
       setBusy(false);
     }
@@ -75,20 +78,22 @@ export default function AgentChat() {
         <p className="note -rotate-2 inline-block text-[22px]">hi owner, what are we paying today?</p>
         <h1 className="!text-[44px] !leading-[50px] tracking-[-0.02em]">The AI asks. The rules decide.</h1>
         <div className="flex gap-4 justify-center mt-4">
-          <span className="label bg-green border border-ink shadow-hard-sm px-3 py-1 -rotate-2">Auto pay</span>
-          <span className="label bg-yellow border border-ink shadow-hard-sm px-3 py-1 rotate-1.5">You sign</span>
-          <span className="label bg-pink border border-ink shadow-hard-sm px-3 py-1 -rotate-1">Blocked</span>
+          <StatusBadge value="AUTO_PAY" rotate={-2} />
+          <span className="label inline-flex items-center gap-1.5 bg-yellow border border-ink rounded shadow-hard-sm px-2.5 py-1 rotate-1.5"><PenLine size={12} strokeWidth={3} aria-hidden />You sign</span>
+          <StatusBadge value="BLOCKED" rotate={-1} /> 
         </div>
       </section>
       <div className="flex gap-8 flex-wrap items-start">
         <section className="flex-1 min-w-[320px]" aria-labelledby="chat-h">
-          <h2 id="chat-h" className="note !font-hand !text-[26px] inline-block bg-card border border-ink rounded-tag px-3 mb-4">chat</h2>
+          <div className="mb-4"><SectionTag id="chat-h">chat</SectionTag></div>
           <div className="space-y-4 min-h-[200px]" aria-live="polite">
             {msgs.map((m, i) => m.role === "user" ? (
               <div key={i} className="flex justify-end"><p className="bg-blue text-white border border-ink rounded shadow-hard px-4 py-3 max-w-[420px]">{m.text}</p></div>
+            ) : m.error ? (
+              <div key={i} className="max-w-[640px]"><Banner kind="error" title="The agent could not answer">{m.text}</Banner></div>
             ) : (
               <div key={i} className="flex gap-3">
-                <span className="w-[34px] h-[34px] shrink-0 rounded-full bg-pink border border-ink flex items-center justify-center"><Bot size={18} aria-hidden /></span>
+                <span className="w-[34px] h-[34px] shrink-0 rounded-full bg-pink border border-ink flex items-center justify-center"><Check size={18} strokeWidth={3} aria-hidden /></span>
                 <div>
                   <p className="bg-card border border-ink rounded shadow-hard px-4 py-3 max-w-[640px] whitespace-pre-wrap"><Bold text={m.text} /></p>
                   {m.reply && (
@@ -105,8 +110,7 @@ export default function AgentChat() {
           </div>
           <div className="flex gap-3 flex-wrap my-5">
             {STARTERS.map(([s, c, r]) => (
-              <button key={s} onClick={() => send(s)} disabled={busy}
-                className={`${c} ${r} border border-ink rounded shadow-hard-sm px-3 py-2 text-[14px] font-semibold hover:-translate-y-px disabled:opacity-50`}>{s}</button>
+              <Button key={s} variant="chip" onClick={() => send(s)} disabled={busy} className={`${c} ${r}`}>{s}</Button>
             ))}
           </div>
           <form onSubmit={(e: FormEvent) => { e.preventDefault(); void send(text); }} className="flex gap-3">
@@ -117,7 +121,7 @@ export default function AgentChat() {
           <p className="note text-[18px] mt-3">The agent can only request payments. A rules engine decides.</p>
         </section>
         <aside className="w-[412px] max-w-full min-[1100px]:sticky min-[1100px]:top-16 min-[1100px]:self-start min-[1100px]:max-h-[calc(100vh-5rem)] min-[1100px]:overflow-y-auto p-4 -m-4 space-y-4" aria-labelledby="did-h">
-          <h2 id="did-h" className="note !font-hand !text-[26px] inline-block bg-card border border-ink rounded-tag px-3">what the agent did</h2>
+          <SectionTag id="did-h">what the agent did</SectionTag>
           {!last && <p className="text-[14px] text-ink-mute">Tool calls and the rules decision show up here.</p>}
           {submit?.decision && (
             <div className="pt-3"><DecisionCard invoice={submit.invoice} amount={submit.amount} decision={submit.decision} risk={submit.risk} reasons={submit.reasons} tilt={0.6} /></div>

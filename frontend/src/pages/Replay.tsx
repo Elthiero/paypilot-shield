@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Button from "../components/Button";
 import DecisionCard from "../components/DecisionCard";
+import EmptyState from "../components/EmptyState";
 import DecisionTrace from "../components/DecisionTrace";
 import ErrorState from "../components/ErrorState";
 import PageHeader from "../components/PageHeader";
@@ -40,7 +41,8 @@ export default function Replay() {
           {trace.data && trace.data.length > 1 && <p className="label">Time from first to last step: {duration(trace.data[0].at, trace.data[trace.data.length - 1].at)}</p>}
         </div>
       )}
-      {trace.data && (
+      {trace.data && trace.data.length === 0 && <EmptyState note="no steps yet" text="This request has no recorded steps." />}
+      {trace.data && trace.data.length > 0 && (
         <>
           <DecisionTrace events={trace.data} />
           <Button variant="secondary" className="mt-6" onClick={copy}>{copied ? <Check size={12} /> : <Copy size={12} />}{copied ? "Copied" : "Copy as JSON"}</Button>

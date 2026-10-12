@@ -2,6 +2,7 @@ import { useState } from "react";
 import { money, when } from "../lib/format";
 import type { ApprovalItem } from "../lib/types";
 import Button from "./Button";
+import Input from "./Input";
 import CodeBlock from "./CodeBlock";
 import DecisionCard from "./DecisionCard";
 
@@ -31,10 +32,7 @@ export default function ApprovalCard({ item, onSign, onReject }: Props) {
         </details>
         {rejecting ? (
           <div className="space-y-2">
-            <label className="block">
-              <span className="label block mb-1">Reason (optional)</span>
-              <input className="input !shadow-none" value={reason} onChange={(e) => setReason(e.target.value)} />
-            </label>
+            <Input label="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
             <div className="flex gap-3 justify-end">
               <Button variant="secondary" onClick={() => setRejecting(false)} disabled={busy}>Cancel</Button>
               <Button variant="danger" onClick={reject} loading={busy}>Confirm reject</Button>

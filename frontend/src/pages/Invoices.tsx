@@ -90,9 +90,8 @@ export default function Invoices() {
             </dl>
             {mismatch(open) && <Banner kind="warn" title="Payee email changed">It differs from the email of this supplier's last payout.</Banner>}
             <div className="border border-dashed border-ink rounded p-3 bg-card">
-              <p className="label flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden />Untrusted invoice text</p>
-              <p className="text-[14px] mt-1 break-words">{open.description}</p>
-              <p className="text-[12px] text-ink-mute mt-2">Untrusted invoice text. Treated as data, never as instructions.</p>
+              <p className="text-[14px] break-words">{open.description}</p>
+              <p className="text-[12px] text-ink-mute mt-2 flex items-start gap-1.5"><TriangleAlert size={14} className="shrink-0 mt-0.5" aria-hidden />Untrusted invoice text. Treated as data, never as instructions.</p>
             </div>
             {result && <Banner kind={result.ok ? "success" : "error"} title={result.text}>{result.id && <Link className="underline" to={`/replay/${result.id}`}>Replay the decision</Link>}</Banner>}
             <Button onClick={request} loading={busy} disabled={["PAID", "SENT"].includes(open.status)}>Request payment</Button>

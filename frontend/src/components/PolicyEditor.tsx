@@ -1,6 +1,9 @@
 import { FormEvent, useState } from "react";
 import type { Mandate, Rules } from "../lib/types";
+import Banner from "./Banner";
 import Button from "./Button";
+import Card from "./Card";
+import Input from "./Input";
 
 export interface PolicyDraft { policy_text: string; rules: Rules; }
 
@@ -25,32 +28,24 @@ export default function PolicyEditor({ current, onSubmit }: { current: Mandate |
 
   const field = "block";
   return (
-    <form onSubmit={submit} className="card space-y-4">
-      <h2>Edit policy</h2>
+    <form onSubmit={submit}>
+      <Card title="Edit policy" className="space-y-4">
       <label className={field}>
         <span className="label block mb-1">Policy in plain words</span>
         <textarea className="input !h-24 py-2" value={text} onChange={(e) => setText(e.target.value)} required />
       </label>
       <div className="grid grid-cols-2 gap-4">
-        <label className={field}>
-          <span className="label block mb-1">Auto limit (USD)</span>
-          <input className="input money" inputMode="decimal" value={limit} onChange={(e) => setLimit(e.target.value)} required />
-        </label>
-        <label className={field}>
-          <span className="label block mb-1">Monthly budget (USD)</span>
-          <input className="input money" inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} required />
-        </label>
+        <Input label="Auto limit (USD)" className="money" inputMode="decimal" value={limit} onChange={(e) => setLimit(e.target.value)} required />
+        <Input label="Monthly budget (USD)" className="money" inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} required />
       </div>
-      <label className={field}>
-        <span className="label block mb-1">Valid until</span>
-        <input className="input" type="date" value={until} min={inDays(0)} onChange={(e) => setUntil(e.target.value)} required />
-      </label>
+      <Input label="Valid until" type="date" value={until} min={inDays(0)} onChange={(e) => setUntil(e.target.value)} required />
       <label className="flex items-center gap-2 text-[14px]">
         <input type="checkbox" className="w-4 h-4 accent-blue" checked={verified} onChange={(e) => setVerified(e.target.checked)} />
         Only pay verified suppliers
       </label>
-      {error && <p role="alert" className="bg-pink border border-ink rounded px-3 py-2 text-[13px]">{error}</p>}
+      {error && <Banner kind="error" title={error} />}
       <Button type="submit" className="w-full">Review and sign</Button>
+      </Card>
     </form>
   );
 }

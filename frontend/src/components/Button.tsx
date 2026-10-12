@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-const CLS = { primary: "btn-primary", brand: "btn-brand", secondary: "btn-secondary", danger: "btn-danger" } as const;
+const CLS = { primary: "btn-primary", brand: "btn-brand", secondary: "btn-secondary", danger: "btn-danger", chip: "btn-chip" } as const;
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof CLS;

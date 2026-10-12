@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ApiError } from "../lib/api";
 import { signPayload } from "../lib/crypto";
+import { trapTab } from "../lib/focus";
 import Banner from "./Banner";
 import Button from "./Button";
 import CodeBlock from "./CodeBlock";
@@ -37,12 +38,7 @@ export default function SigningModal({ title = "Sign with your key", confirmLabe
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "Escape" && phaseRef.current !== "signing") onClose();
-    if (e.key !== "Tab" || !box.current) return;
-    const f = box.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], summary, [tabindex='0']");
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    trapTab(e, box.current);
   };
 
   const sign = async () => {

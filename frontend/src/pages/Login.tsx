@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Banner from "../components/Banner";
 import Button from "../components/Button";
+import Input from "../components/Input";
 import { login } from "../hooks/useAuth";
 import { ApiError } from "../lib/api";
 
@@ -34,14 +35,8 @@ export default function Login() {
           <p className="note -rotate-2 inline-block">welcome back!</p>
           <h1>Sign in</h1>
           {error && <Banner kind="error" title={error} />}
-          <label className="block">
-            <span className="label block mb-1">Email</span>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
-          </label>
-          <label className="block">
-            <span className="label block mb-1">Password</span>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-          </label>
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
           <Button type="submit" loading={busy} className="w-full">Sign in</Button>
         </form>
         <div className="space-y-5">

@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Shell from "./components/Shell";
 import { isLoggedIn } from "./hooks/useAuth";
 import AgentChat from "./pages/AgentChat";
@@ -15,7 +16,16 @@ function Guard() {
   return isLoggedIn() ? <Shell /> : <Navigate to="/login" replace />;
 }
 
+const TITLES: Record<string, string> = {
+  "/login": "Sign in", "/privacy": "Privacy and terms", "/": "Agent", "/policy": "Policy", "/approvals": "Approvals",
+  "/payments": "Payments", "/invoices": "Invoices", "/suppliers": "Suppliers",
+};
+
 export default function App() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    document.title = `${TITLES[pathname] ?? (pathname.startsWith("/replay") ? "Replay" : "PayPilot")} | PayPilot Shield`;
+  }, [pathname]);
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
