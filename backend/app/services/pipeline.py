@@ -2,7 +2,6 @@
 import calendar
 import hashlib
 import json
-import time
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -158,13 +157,9 @@ def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = Tr
                                      "receiver": pr.payee_email, "amount": float(pr.amount)})
     if not wait:
         return
-    real = settings.paypal_mode != "fake"
-    for _ in range(6 if real else 1):
-        refresh_transaction(db, txn, paypal)
-        if txn.status != "PENDING":
-            break
-        if real:
-            time.sleep(3)
+    # One check, no waiting. A real sandbox payout stays PENDING for about 35 s, so polling here only delayed the
+    # reply. The PayPal webhook, the Payments page poll and Refresh settle it.
+    refresh_transaction(db, txn, paypal)
 
 
 def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = True) -> dict:

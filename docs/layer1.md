@@ -98,11 +98,11 @@ This is the only function in the codebase that sends money. Never add another pa
 1. Build a unique batch id. It is also the PayPal idempotency key (`PayPal-Request-Id`), so a retry cannot pay twice.
 2. Call `send_payout` on the PayPal client. In `sandbox` mode this is a real call to the Payouts API. In `fake` mode it is an offline stand-in.
 3. Save a `Transaction` with status `PENDING`. Set the request and invoice to `SENT`.
-4. Poll `get_batch` up to 6 times, 3 seconds apart:
+4. Check `get_batch` once, straight away (no waiting, so the reply is fast):
    - `SUCCESS`: transaction, request and invoice become `PAID` and `payout_confirmed` is audited.
    - `DENIED`, `CANCELED` or `FAILED`: everything becomes `FAILED` and `payout_failed` is audited.
-   - Still processing: the status stays `SENT`. Sandbox batches can take about five minutes.
-5. `POST /transactions/{id}/refresh` polls PayPal again later.
+   - Still processing: the status stays `SENT`. Sandbox batches usually take about 35 seconds, sometimes minutes.
+5. The PayPal webhook, the Payments page poll and `POST /transactions/{id}/refresh` settle it later.
 6. A PayPal HTTP error sets `FAILED` and audits `payout_error`.
 
 ## Status lifecycle
@@ -168,6 +168,6 @@ To test against the real sandbox, set `PAYPAL_MODE=sandbox`, run `python seed.py
 - Policy limits are defaults, not signed by the owner (layer 2).
 - No approval flow yet, so INV-003 waits (layer 2).
 - No verifier re-checks the invoice against the snapshot before paying (layer 2).
-- Confirmation uses the server poll, the Payments page poll and, when `PAYPAL_WEBHOOK_ID` is set, the PayPal webhook.
+- Confirmation uses the Payments page poll, Refresh and, when `PAYPAL_WEBHOOK_ID` is set, the PayPal webhook.
 - The rule based matcher misses "pay invoice 4" and cannot filter or batch.
 - Invoices can be added from the UI since layer 4. Suppliers cannot.
