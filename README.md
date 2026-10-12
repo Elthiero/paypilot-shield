@@ -199,7 +199,7 @@ Live demo: https://paypilot.donambi.dev (PayPal sandbox). The production stack r
 
 ```bash
 cp .env.example .env        # then edit it, see below
-docker compose up --build   # open http://localhost:8080
+docker compose up --build   # open http://localhost:8080 (set FRONTEND_PORT in .env to publish another port)
 docker compose exec backend python seed.py   # first run only, loads suppliers, invoices and the owner account
 ```
 
