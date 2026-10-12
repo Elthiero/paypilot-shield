@@ -6,7 +6,7 @@ import DecisionCard from "../components/DecisionCard";
 import DecisionTrace from "../components/DecisionTrace";
 import ErrorState from "../components/ErrorState";
 import PageHeader from "../components/PageHeader";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { duration } from "../lib/format";
@@ -32,7 +32,7 @@ export default function Replay() {
     <div className="max-w-[820px]">
       <PageHeader note="what happened" title={`Replay of request ${id}`} text="Every step the pipeline took, in order." action={<Link className="btn-secondary" to="/payments">Back to payments</Link>} />
       {err && <ErrorState message={err} onRetry={() => { head.reload(); trace.reload(); }} />}
-      {(head.loading || trace.loading) && !err && <Spinner rows={4} />}
+      {(head.loading || trace.loading) && !err && <Skeleton rows={4} />}
       {d && (
         <div className="mb-8 space-y-3">
           <DecisionCard invoice={d.invoice} supplier={d.supplier} amount={d.amount} currency={d.currency} decision={d.decision} risk={d.risk} reasons={d.reasons} />

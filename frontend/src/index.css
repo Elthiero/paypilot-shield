@@ -8,6 +8,7 @@
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, theme(colors.rule) 31px, theme(colors.rule) 32px);
   }
   :focus-visible { outline: 3px solid theme(colors.blue.mid); outline-offset: 2px; }
+  a.text-blue:hover { color: theme(colors.blue.mid); }
   h1 { @apply text-[28px] leading-[34px] font-extrabold; }
   h2 { @apply text-[20px] leading-[28px] font-extrabold; }
   h3 { @apply text-[15px] leading-6 font-bold; }
@@ -30,6 +31,7 @@
   .tape { @apply absolute w-[76px] h-6 pointer-events-none; background: theme(colors.yellow / 75%); }
   .page-in { animation: pagein 160ms ease-out; }
   @keyframes pagein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 theme(colors.cyan.DEFAULT); } 100% { box-shadow: 0 0 0 14px transparent; } }
   @keyframes seal { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
   @keyframes pulse2 { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 }

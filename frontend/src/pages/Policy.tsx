@@ -8,7 +8,7 @@ import PolicyEditor from "../components/PolicyEditor";
 import type { PolicyDraft } from "../components/PolicyEditor";
 import { refreshShell } from "../components/Shell";
 import SigningModal from "../components/SigningModal";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
@@ -86,7 +86,7 @@ export default function Policy() {
         <div className="flex-1 min-w-[320px] space-y-6">
           <section className="card space-y-4" aria-labelledby="active-h">
             <div className="flex items-center justify-between"><h2 id="active-h">Active policy</h2>{m && <StatusBadge value={m.verified ? "VERIFIED" : "SIGNATURE_INVALID"} />}</div>
-            {active.loading && !m && <Spinner rows={2} />}
+            {active.loading && !m && <Skeleton rows={2} />}
             {active.error && <ErrorState message={active.error} onRetry={active.reload} />}
             {m && (<><p className="text-[14px]">{m.policy_text}</p><Rules m={m} /></>)}
             {!active.loading && !active.error && !m && <p className="note">no signed policy yet</p>}

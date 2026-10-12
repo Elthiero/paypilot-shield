@@ -1,4 +1,4 @@
-export default function Spinner({ rows = 3 }: { rows?: number }) {
+export default function Skeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="Loading">
       {Array.from({ length: rows }, (_, i) => (

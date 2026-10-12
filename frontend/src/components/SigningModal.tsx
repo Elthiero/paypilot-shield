@@ -69,7 +69,7 @@ export default function SigningModal({ title = "Sign with your key", confirmLabe
         <div className="max-h-[80vh] overflow-y-auto px-1 -mx-1">
         {phase === "sealed" ? (
           <div className="text-center py-4" aria-live="polite">
-            <div className="mx-auto w-[72px] h-[72px] rounded-full bg-green border border-ink shadow-hard flex items-center justify-center" style={{ animation: "seal 400ms ease-out" }}>
+            <div className="mx-auto w-[72px] h-[72px] rounded-full bg-green border border-ink shadow-hard flex items-center justify-center" style={{ animation: "seal 400ms ease-out, ring 400ms ease-out" }}>
               <BadgeCheck size={36} aria-hidden />
             </div>
             <p className="note mt-3">signed and verified!</p>

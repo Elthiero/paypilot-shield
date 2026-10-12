@@ -7,7 +7,7 @@ import ErrorState from "../components/ErrorState";
 import PageHeader from "../components/PageHeader";
 import { refreshShell } from "../components/Shell";
 import SigningModal from "../components/SigningModal";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
@@ -59,7 +59,7 @@ export default function Approvals() {
     <div>
       <PageHeader note="your decision" title="Approvals" text="Payments the rules engine sent to you. You sign the exact payment." />
       {notice && <div className="mb-4"><Banner kind="info" title={notice} /></div>}
-      {loading && !data && <Spinner />}
+      {loading && !data && <Skeleton />}
       {error && <ErrorState message={error} onRetry={reload} />}
       {data && data.length === 0 && <EmptyState note="nothing is waiting for you" text="Ask the agent to pay an invoice that needs a decision." />}
       <div className="max-w-[720px] space-y-10">
