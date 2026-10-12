@@ -48,9 +48,10 @@ for (const p of pages) {
 test("keyboard: Tab to a supplier row and Enter opens it, Escape closes it", async ({ page }) => {
   await login(page);
   await page.goto("/suppliers");
-  await page.getByRole("gridcell", { name: "ABC Supplies" }).click();  // focus a cell the way a keyboard user lands on one
+  await page.getByRole("gridcell", { name: "ABC Supplies" }).click();  // focuses the cell, and the click also opens the drawer
+  await expect(page.getByRole("dialog", { name: "ABC Supplies" })).toBeVisible();  // wait for it, or Escape can fire before it opens
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(page.getByRole("dialog")).toBeHidden();  // focus returns to the cell
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog", { name: "ABC Supplies" })).toBeVisible();
   await page.keyboard.press("Escape");
