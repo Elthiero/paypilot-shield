@@ -31,7 +31,7 @@ Tests: `backend/tests/test_security.py`.
 
 - The login token is in `sessionStorage`, so an XSS bug would expose it. The CSP makes that harder, it does not remove it.
 - `style-src` allows `unsafe-inline`. Removing it needs nonces for the AG Grid and React styles.
-- Fonts load from Google Fonts. Self-hosting them would let the CSP drop two external hosts.
+- Visitors' IPs reach Google through Google Fonts, and with AI mode on, chat text and invoice details go to Groq. Both are disclosed on `/privacy`. Fonts load from Google Fonts. Self-hosting them would let the CSP drop two external hosts.
 - The budget lock is Postgres only. SQLite has a single writer, so dev and tests do not need it.
 - `npm audit` still reports build-time tools (Tailwind 3's dependencies and Vite 5's esbuild dev server). None of them ships to the browser or runs in production. Fixing them means Tailwind 4 and Vite 8, which break the build (tried and reverted on 12 Oct). The runtime advisory in react-router was fixed by moving to v7.
 - All data endpoints are single tenant. Approvals and payments are not scoped to a user, so multi-user roles would need that first.

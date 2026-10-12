@@ -4,7 +4,7 @@
 
 **An AI agent that pays supplier invoices through PayPal Payouts, but only inside a spending policy the owner has signed, and only after the invoice passes a truth check. Every decision is written to an audit log you can replay.**
 
-Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
+Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). Live demo (PayPal sandbox): https://paypilot.donambi.dev. Privacy and terms: [/privacy](https://paypilot.donambi.dev/privacy).
 
 ## The problem
 
@@ -162,7 +162,7 @@ Nothing is paid until the owner has signed a policy. In the web app open **Polic
 | `PAYPAL_MODE` | `sandbox` for real sandbox calls, `fake` for an offline stand-in |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Sandbox app credentials |
 | `LLM_API_KEY`, `LLM_MODEL` | Optional. Without them a rule based matcher handles chat |
-| `LLM_BASE_URL` | Optional. Set it to use an OpenAI compatible provider (Groq `https://api.groq.com/openai/v1`, xAI `https://api.x.ai/v1`). Empty means Anthropic |
+| `LLM_BASE_URL` | Optional. Set it to use an OpenAI compatible provider (Groq `https://api.groq.com/openai/v1`, xAI `https://api.x.ai/v1`). Empty means Anthropic. The live demo uses Groq |
 | `CORS_ORIGINS` | Allowed frontend origins |
 
 Never commit `.env`. It is in `.gitignore`.
@@ -225,6 +225,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
 - Planned: PayPal webhook, LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
 - Known security gaps are listed in [docs/security.md](docs/security.md).
+- Data sharing: with AI mode on, chat messages and the invoice details the agent looks up go to the LLM provider (Groq on the live demo). Payout requests go to the PayPal sandbox. The `/privacy` page says this in plain words.
 
 ## Team
 

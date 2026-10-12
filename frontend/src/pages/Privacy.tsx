@@ -21,7 +21,7 @@ export default function Privacy() {
 
         <h2>Who else sees data</h2>
         <ul className="list-disc pl-5 space-y-1">
-          <li><b>AI provider.</b> When AI mode is on, your chat messages and the invoice details the agent looks up (number, supplier, amount, status, description) are sent to the configured OpenAI compatible provider. The rules engine, not the AI, decides payments.</li>
+          <li><b>AI provider.</b> When AI mode is on, your chat messages and the invoice details the agent looks up (number, supplier, amount, status, description) are sent to the AI provider, Groq. The rules engine, not the AI, decides payments.</li>
           <li><b>PayPal sandbox.</b> Payout requests send the payee email and amount to PayPal.</li>
           <li><b>Google Fonts.</b> Your browser loads fonts from Google, which sees your IP address.</li>
         </ul>

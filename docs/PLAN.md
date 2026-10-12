@@ -3,6 +3,7 @@
 Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 
 **Team:** Elthiero (backend, integrations, deploy) and Alain (frontend). Both share docs, demo and submission.
+**Hackathon:** [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 **Deadline:** Devpost closes Thu 12 Nov 2026, 12:00 PST (22:00 Kigali). **Our submit target: Tue 10 Nov.** Keep 2 days of slack.
 **Today:** Mon 12 Oct. That is 29 days to the target.
 
@@ -116,10 +117,11 @@ Set this in `.github/CODEOWNERS`:
 - [x] Wire every screen to real endpoints, remove unused mocks
 - [x] Base path support (`VITE_BASE=/paypilot/`, router basename, API follows the base) and test at `/paypilot/approvals` deep link (see `docs/layer4.md`)
 - [ ] All four states on every page, keyboard path, reduced motion
+- [x] Privacy and terms page at `/privacy`, linked from login and the footer
 - [x] Tamper banner and the Demo tools card
 - [x] Production build served by nginx (the `frontend` container, live)
 
-**Gate Sat 31 Oct:** full demo path on the live URL. Deployed since 12 Oct; the full demo path on the live URL still has to be run and timed.
+**Gate Sat 31 Oct:** full demo path on the live URL. Deployed since 12 Oct. Run on the live URL on 12 Oct: steps 1 to 5 pass (INV-002 stood in for INV-001, which was already paid). Step 6 (tamper) cannot run live because demo tools are off in production. Timing still to do.
 
 ### Week 4: Sun 1 to Sat 7 Nov (freeze, polish, demo)
 
