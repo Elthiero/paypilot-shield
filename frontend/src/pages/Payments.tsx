@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import ErrorState from "../components/ErrorState";
 import OpsGrid from "../components/OpsGrid";
 import PageHeader from "../components/PageHeader";
+import TotalPaidChart from "../components/TotalPaidChart";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { api } from "../lib/api";
@@ -88,6 +89,7 @@ export default function Payments() {
         <Stat label="Awaiting approval" value={awaiting} fill="bg-yellow" icon={<Hourglass size={24} aria-hidden />} />
         <Stat label="Blocked" value={blocked} fill="bg-pink" icon={<ShieldX size={24} aria-hidden />} />
       </div>
+      <TotalPaidChart txns={txns.data ?? []} />
       <div className="flex mb-4" role="tablist">
         {(["requests", "payouts"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}

@@ -6,6 +6,11 @@ export interface Reason { code: string; level: "block" | "review" | "info"; mess
 export interface Supplier { id: number; name: string; paypal_email: string; verified: boolean;
   last_payout_email: string | null; country: string; }
 
+export interface SupplierAnalytics { supplier: { id: number; name: string; verified: boolean; country: string };
+  invoices: number; requests: number; decisions: Record<string, number>; paid_count: number; paid_total: number;
+  paid_median: number | null; paid_max: number | null; last_paid_at: string | null; flags: Record<string, number>;
+  payments: { invoice: string; amount: number; currency: string; at: string }[]; }
+
 export interface Invoice { id: number; number: string; supplier: string | null;
   supplier_verified: boolean | null; description: string; amount: number; currency: string;
   payee_email: string; status: string; }

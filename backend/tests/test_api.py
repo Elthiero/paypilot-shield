@@ -44,3 +44,15 @@ def test_agent_pays_inv001_and_explains_inv005(client):
 def test_health(client):
     h = client.get("/health").json()
     assert h["paypal_mode"] == "fake" and h["dev_tools"] is True  # the test env is APP_ENV=development
+
+
+def test_supplier_analytics(client):
+    h = login(client)
+    client.post("/payments", json={"invoice_number": "INV-001"}, headers=h)
+    client.post("/payments", json={"invoice_number": "INV-005"}, headers=h)
+    sups = {s["name"]: s["id"] for s in client.get("/suppliers", headers=h).json()}
+    a = client.get(f"/suppliers/{sups['ABC Supplies']}/analytics", headers=h).json()
+    assert a["paid_count"] == 1 and a["paid_total"] == 250 and a["payments"][0]["invoice"] == "INV-001"
+    t = client.get(f"/suppliers/{sups['TechWorld']}/analytics", headers=h).json()
+    assert t["paid_count"] == 0 and t["decisions"] == {"BLOCKED": 1} and t["flags"]["prompt_injection"] == 1
+    assert client.get("/suppliers/999/analytics", headers=h).status_code == 404
