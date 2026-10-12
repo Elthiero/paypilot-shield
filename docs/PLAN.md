@@ -133,7 +133,7 @@ Set this in `.github/CODEOWNERS`:
 - [ ] Elthiero: backend hardening (rate limit on login, error messages, health checks), final test run, README setup instructions verified from a clean clone
 - [ ] Alain: visual polish pass against the design preview, responsive check at 1440 and 1024, login screen
 - [ ] Both: demo script (`docs/demo-script.md`), record the video (script first, 2 takes), screenshots in `docs/screenshots/`
-- [ ] Both: Devpost text draft: problem, what it does, how we built it (golden rule), challenges, what is next. Official rules (read 12 Oct), required items:
+- [x] Draft written in `docs/devpost.md` (fill in the demo password at submit time, then review). Original item: Devpost text draft: problem, what it does, how we built it (golden rule), challenges, what is next. Official rules (read 12 Oct), required items:
   - public GitHub repo with the MIT license visible in About (done)
   - working demo: live URL, with login credentials in the Devpost testing instructions field (not in the README), plus the note that a new browser registers a key and the policy must be signed again, and that New invoice creates more invoices to pay
   - text description, the tools used and how (Groq, PayPal Payouts and webhooks, AG Grid, Claude Code), and a paragraph on how the project was significantly updated during the period (first commit 11 Oct, period opened 1 Oct)
