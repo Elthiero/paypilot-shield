@@ -27,6 +27,8 @@ What protects the money, what was hardened in the review of 12 Oct, and what is 
 
 Tests: `backend/tests/test_security.py`.
 
+- `POST /webhooks/paypal` has no login, so the PayPal signature is the only way in. It is checked with PayPal's verify-webhook-signature call on the raw body, and it fails closed (no `PAYPAL_WEBHOOK_ID`, missing headers or a failed call all reject). The body only names the payout batch: the status is fetched from PayPal, and a repeated delivery finds the transaction already settled and does nothing.
+
 ## Known gaps
 
 - The login token is in `sessionStorage`, so an XSS bug would expose it. The CSP makes that harder, it does not remove it.
@@ -35,5 +37,4 @@ Tests: `backend/tests/test_security.py`.
 - The budget lock is Postgres only. SQLite has a single writer, so dev and tests do not need it.
 - `npm audit` still reports build-time tools (Tailwind 3's dependencies and Vite 5's esbuild dev server). None of them ships to the browser or runs in production. Fixing them means Tailwind 4 and Vite 8, which break the build (tried and reverted on 12 Oct). The runtime advisory in react-router was fixed by moving to v7.
 - All data endpoints are single tenant. Approvals and payments are not scoped to a user, so multi-user roles would need that first.
-- The PayPal webhook is not built. When it is: verify PayPal's signature before trusting the body, and make the handler idempotent.
 - Behind a second proxy (host nginx with TLS): `frontend/nginx.conf` trusts `X-Forwarded-For` from the compose subnet `172.28.0.0/24` only. The host nginx must send `proxy_set_header X-Forwarded-For $remote_addr;`. Check the subnet with `docker network inspect` and adjust `set_real_ip_from` if it differs.

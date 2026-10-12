@@ -1,4 +1,5 @@
 """PayPal client with a real sandbox implementation and a fake for tests and fallback."""
+import json
 import time
 import uuid
 from decimal import Decimal
@@ -68,12 +69,30 @@ class PayPalClient:
         r.raise_for_status()
         return r.json()
 
+    def verify_webhook(self, headers: dict, raw_body: bytes) -> bool:
+        """Ask PayPal to check the signature. The event is sent as the raw text PayPal signed, not re-serialised."""
+        h = {k: headers.get(f"paypal-{k}") for k in ("auth-algo", "cert-url", "transmission-id", "transmission-sig", "transmission-time")}
+        if not all(h.values()) or not settings.paypal_webhook_id:
+            return False
+        head = json.dumps({k.replace("-", "_"): v for k, v in h.items()} | {"webhook_id": settings.paypal_webhook_id})
+        r = httpx.post(
+            f"{settings.paypal_base_url}/v1/notifications/verify-webhook-signature",
+            content=head[:-1] + ', "webhook_event": ' + raw_body.decode() + "}",
+            headers=self._headers(),
+            timeout=30,
+        )
+        r.raise_for_status()
+        return r.json().get("verification_status") == "SUCCESS"
+
 
 class FakePayPalClient:
     """No network. Always succeeds. Used by tests and as a demo fallback."""
 
     def send_payout(self, request_id, email, amount, currency="USD", note=""):
         return {"batch_header": {"payout_batch_id": "FAKE" + uuid.uuid4().hex[:8], "batch_status": "PENDING"}}
+
+    def verify_webhook(self, headers, raw_body):
+        return headers.get("paypal-transmission-sig") == "valid"  # tests send "valid" or anything else
 
     def get_batch(self, batch_id):
         return {

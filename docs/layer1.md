@@ -138,7 +138,7 @@ Invoices enter the database only through `backend/seed.py`. It drops every table
 | `GET /payments`, `GET /payments/{id}/trace` | Payment requests and their audit trail |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payouts and status refresh |
 
-`/webhooks` is a stub. `/mandates` and `/approvals` were stubs in layer 1 and are live since layer 2.
+`/webhooks/paypal` is live since the webhook was added (see security.md). `/mandates` and `/approvals` were stubs in layer 1 and are live since layer 2.
 
 ## Demo invoices and expected results
 
@@ -168,6 +168,6 @@ To test against the real sandbox, set `PAYPAL_MODE=sandbox`, run `python seed.py
 - Policy limits are defaults, not signed by the owner (layer 2).
 - No approval flow yet, so INV-003 waits (layer 2).
 - No verifier re-checks the invoice against the snapshot before paying (layer 2).
-- Webhooks are not implemented, so confirmation relies on polling.
+- Confirmation uses the server poll, the Payments page poll and, when `PAYPAL_WEBHOOK_ID` is set, the PayPal webhook.
 - The rule based matcher misses "pay invoice 4" and cannot filter or batch.
 - Invoices can be added from the UI since layer 4. Suppliers cannot.

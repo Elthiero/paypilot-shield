@@ -16,7 +16,7 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 | Layer 3 detection (extra fraud signals, structured reasons) | Done, tag `v0.3-detection`. LLM classifier not built |
 | Frontend (Layer 4) | All 8 pages built and calling the real API, plus New invoice form, vendor history and a total paid chart. Base path deep link tested (see `docs/layer4.md`). Polish checks (four states, reduced motion) still open |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
-| Webhook | Not built (stub). The manual Refresh button covers it |
+| Webhook | Built and tested with the fake client. Not yet registered with PayPal or tried against a real event. Polling and Refresh still work without it |
 | Deploy | **Live** at https://paypilot.donambi.dev (served at the root, `/api` proxied, HTTPS, sandbox PayPal, demo tools off). `ci.yml` runs tests, `pip-audit` and the frontend build. No automatic deploy workflow, deploys are manual |
 | Security | Review of 12 Oct done and fixed, see `docs/security.md` for the open items |
 
@@ -108,7 +108,7 @@ Set this in `.github/CODEOWNERS`:
 
 **Elthiero (backend)**
 - [x] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
-- [ ] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling
+- [x] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling. Still to do: register it in the PayPal developer dashboard and confirm one real event
 - [x] Deploy to the VPS: `docker-compose.yml`, Postgres via `DATABASE_URL`, HTTPS. Live at https://paypilot.donambi.dev (root path, so `/paypilot/` is not used in production)
 - [ ] Deploy workflow (deploys are manual today)
 - [x] Seed and reset script for demo data (`python seed.py` wipes and reseeds, no `--reset` flag)

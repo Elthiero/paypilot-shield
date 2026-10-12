@@ -190,7 +190,7 @@ Pipeline summary shape: `{ ok, payment_request_id, invoice, amount, decision, ri
 
 Extra statuses the UI must handle: `REJECTED`, `EXPIRED`, `FAILED` (see DESIGN.md 2.4).
 
-**Webhook (not built, not called by the frontend).** `POST /webhooks/paypal` is a stub. Transaction status changes after `Refresh`.
+**Webhook (LIVE, not called by the frontend).** `POST /webhooks/paypal` is called by PayPal. Without it the status still changes through polling and `Refresh`.
 
 ## 6. TypeScript types (`src/lib/types.ts`)
 

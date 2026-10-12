@@ -180,6 +180,7 @@ Never commit `.env`. It is in `.gitignore`.
 | `POST /payments`, `GET /payments`, `GET /payments/{id}`, `GET /payments/{id}/trace` | Request a payment, list requests, one request, its audit steps with timestamps. Every `reasons` item is `{ code, level, message }` |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
 | `GET /health` | Liveness check |
+| `POST /webhooks/paypal` | PayPal payout events. No login: the PayPal signature is checked (see below) |
 
 ## Tests
 
@@ -223,7 +224,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 - Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
-- Planned: PayPal webhook, LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
+- Planned: LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
 - Known security gaps are listed in [docs/security.md](docs/security.md).
 - Data sharing: with AI mode on, chat messages and the invoice details the agent looks up go to the LLM provider (Groq on the live demo). Payout requests go to the PayPal sandbox. The `/privacy` page says this in plain words.
 

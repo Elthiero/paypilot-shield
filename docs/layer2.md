@@ -106,7 +106,7 @@ Without the frontend, `scripts/sign_policy.py` plays the browser's part. Its key
 
 ## Known gaps
 
-- Webhooks are a stub, so payout confirmation relies on polling.
+- Payout confirmation comes from polling and, when configured, the PayPal webhook.
 - LLM policy drafting (`/mandates/draft`) is not built. The Policy page edits the rules form directly.
 - Invoices still cannot be added without re-seeding.
 - The private key lives in one browser. Clearing browser data loses it. Use Reset signing key in Demo tools and sign the policy again.
