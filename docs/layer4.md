@@ -71,6 +71,6 @@ Backend tests cover the matcher, status filter, "pay all pending" and `/health` 
 
 - No automated frontend tests and no browser tests in CI. The Playwright script above is manual.
 - Loading, empty and error states come from the shared `OpsGrid`, `Spinner`, `EmptyState` and `ErrorState`. I did not check every page by hand for all four states.
-- Adding invoices from the UI is not built (`POST /invoices` does not exist, invoices come from `seed.py`).
+- Suppliers still come from `seed.py`. Invoices can be added from the UI (`POST /invoices`), but only for an existing supplier.
 - Replacing the signing key uses `window.prompt`, which shows the password on screen.
 - Responsive check at 1024 px and the final visual polish pass are still open.

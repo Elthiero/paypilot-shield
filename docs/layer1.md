@@ -170,4 +170,4 @@ To test against the real sandbox, set `PAYPAL_MODE=sandbox`, run `python seed.py
 - No verifier re-checks the invoice against the snapshot before paying (layer 2).
 - Webhooks are not implemented, so confirmation relies on polling.
 - The rule based matcher misses "pay invoice 4" and cannot filter or batch.
-- Invoices cannot be added without re-seeding.
+- Invoices can be added from the UI since layer 4. Suppliers cannot.

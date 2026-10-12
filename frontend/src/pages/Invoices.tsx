@@ -1,10 +1,11 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { BadgeCheck, TriangleAlert } from "lucide-react";
+import { BadgeCheck, Plus, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Banner from "../components/Banner";
 import Button from "../components/Button";
 import Drawer from "../components/Drawer";
+import NewInvoiceDrawer from "../components/NewInvoiceDrawer";
 import ErrorState from "../components/ErrorState";
 import OpsGrid from "../components/OpsGrid";
 import PageHeader from "../components/PageHeader";
@@ -20,6 +21,7 @@ export default function Invoices() {
   const sup = useApi<Supplier[]>("/suppliers");
   const [filter, setFilter] = useState("ALL");
   const [open, setOpen] = useState<Invoice | null>(null);
+  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string; id?: number } | null>(null);
 
@@ -64,7 +66,8 @@ export default function Invoices() {
 
   return (
     <div>
-      <PageHeader note="your invoices" title="Invoices" text="Everything waiting to be paid. Open one to request payment." />
+      <PageHeader note="your invoices" title="Invoices" text="Everything waiting to be paid. Open one to request payment."
+        action={<Button onClick={() => setAdding(true)}><Plus size={14} aria-hidden />New invoice</Button>} />
       {inv.error && <ErrorState message={inv.error} onRetry={inv.reload} />}
       <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Filter by status">
         {statuses.map((s) => (
@@ -74,6 +77,8 @@ export default function Invoices() {
       </div>
       <OpsGrid rows={inv.error ? null : rows} cols={cols} loading={inv.loading} onRowClicked={(r) => { setOpen(r); setResult(null); }}
         empty={{ note: "no invoices", text: "Nothing matches this filter." }} />
+      {adding && <NewInvoiceDrawer suppliers={sup.data ?? []} onClose={() => setAdding(false)}
+        onCreated={(i) => { setAdding(false); inv.reload(); setOpen(i); setResult(null); }} />}
       {open && (
         <Drawer title={open.number} onClose={() => setOpen(null)}>
           <div className="space-y-4">

@@ -47,3 +47,12 @@ class TamperIn(BaseModel):
 
 class PaymentIn(BaseModel):
     invoice_number: str = Field(max_length=50)
+
+
+class InvoiceIn(BaseModel):
+    supplier_id: int
+    number: str | None = Field(None, max_length=50, pattern=r"^[A-Za-z0-9._-]+$")  # blank = next INV-00N
+    description: str = Field(min_length=1, max_length=MAX_POLICY_TEXT)
+    amount: Decimal = Field(gt=0, le=100000, decimal_places=2)
+    currency: str = Field("USD", pattern=r"^[A-Z]{3}$")
+    payee_email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
