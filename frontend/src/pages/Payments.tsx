@@ -1,5 +1,5 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { BadgeCheck, Hourglass, ShieldX, Wallet } from "lucide-react";
+import { BadgeCheck, Hourglass, ShieldX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -12,13 +12,13 @@ import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { api } from "../lib/api";
 import { duration, money, reasonText, when } from "../lib/format";
-import type { PaymentRequest, PaypalBalance, Reason, Transaction } from "../lib/types";
+import type { PaymentRequest, Reason, Transaction } from "../lib/types";
 
 function Stat({ label, value, icon, fill }: { label: string; value: ReactNode; icon: ReactNode; fill: string }) {
   return (
     <div className="card flex items-center justify-between">
-      <div><p className="label text-ink-mute">{label}</p><p className="font-pixel font-bold text-[32px] leading-10 money">{value}</p></div>
-      <span className={`w-12 h-12 rounded-full border border-ink flex items-center justify-center ${fill}`}>{icon}</span>
+      <div className="min-w-0"><p className="label text-ink-mute">{label}</p><p className="font-pixel font-bold text-[28px] leading-10 money">{value}</p></div>
+      <span className={`w-12 h-12 shrink-0 ml-3 rounded-full border border-ink flex items-center justify-center ${fill}`}>{icon}</span>
     </div>
   );
 }
@@ -26,11 +26,9 @@ function Stat({ label, value, icon, fill }: { label: string; value: ReactNode; i
 export default function Payments() {
   const reqs = useApi<PaymentRequest[]>("/payments");
   const txns = useApi<Transaction[]>("/transactions");
-  const bal = useApi<PaypalBalance>("/payments/balance");
   const [tab, setTab] = useState<"requests" | "payouts">("requests");
 
   const paid = useMemo(() => (txns.data ?? []).filter((t) => t.status === "SUCCESS").reduce((s, t) => s + t.amount, 0), [txns.data]);
-  useEffect(() => { void bal.reload(); }, [paid]); // eslint-disable-line react-hooks/exhaustive-deps
   const awaiting = (reqs.data ?? []).filter((r) => r.status === "AWAITING_APPROVAL").length;
   const blocked = (reqs.data ?? []).filter((r) => r.status === "BLOCKED").length;
 
@@ -86,9 +84,7 @@ export default function Payments() {
   return (
     <div>
       <PageHeader note="the money trail" title="Payments" text="Every request and every payout, with its decision." />
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <Stat label="PayPal balance (sandbox)" fill="bg-sky" icon={<Wallet size={24} aria-hidden />}
-          value={bal.data?.ok ? money(bal.data.available ?? 0, bal.data.currency) : <span title={bal.data?.error}>{bal.loading ? "..." : "n/a"}</span>} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Stat label="Paid total" value={money(paid)} fill="bg-green" icon={<BadgeCheck size={24} aria-hidden />} />
         <Stat label="Awaiting approval" value={awaiting} fill="bg-yellow" icon={<Hourglass size={24} aria-hidden />} />
         <Stat label="Blocked" value={blocked} fill="bg-pink" icon={<ShieldX size={24} aria-hidden />} />

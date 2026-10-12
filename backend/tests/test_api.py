@@ -80,19 +80,3 @@ def test_create_invoice_validation_and_injection(client):
     pay = client.post("/payments", json={"invoice_number": evil["number"]}, headers=h).json()
     assert pay["status"] == "BLOCKED"
 
-
-def test_paypal_balance_is_shown_and_never_an_error(client, monkeypatch):
-    from app.routers import payments
-    from app.services.paypal_client import FakePayPalClient
-    h = login(client)
-    payments._balance["value"] = None
-    assert client.get("/payments/balance", headers=h).json() == {"ok": True, "currency": "USD", "available": 10000.0}
-
-    def boom(self):
-        raise RuntimeError("403")
-    payments._balance["value"] = None
-    monkeypatch.setattr(FakePayPalClient, "get_balance", boom)
-    out = client.get("/payments/balance", headers=h)
-    assert out.status_code == 200 and out.json()["ok"] is False
-    payments._balance["value"] = None  # do not leak the failure into other tests
-    assert client.get("/payments/balance").status_code == 401

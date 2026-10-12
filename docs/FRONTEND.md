@@ -107,7 +107,6 @@ Base URL is `VITE_API_URL`, or `${BASE_URL}api` when it is unset (`/api` at the 
 | GET | `/invoices/{number}` | One invoice, 404 `Invoice not found`. Number is case insensitive |
 | POST | `/agent/chat` | Body `{ message }`. Returns `{ reply, payment_request_id?, trace[], mode }` |
 | GET | `/payments` | Array of payment requests, newest first |
-| GET | `/payments/balance` | `{ ok: true, available, currency }` or `{ ok: false, error }`. Always 200, cached 20 s. Shown as the PayPal balance card on Payments |
 | GET | `/payments/{pr_id}/trace` | Ordered audit events for one request. 404 if unknown |
 | GET | `/transactions` | Array of PayPal payouts, newest first |
 | POST | `/transactions/{txn_id}/refresh` | Re-reads PayPal status. Returns `{ id, status }` |

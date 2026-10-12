@@ -108,7 +108,7 @@ In the PayPal developer dashboard (Testing Tools, Sandbox Accounts) create:
 - 1 **Business** account (country United States), funded. This is the sender.
 - 3 **Personal** accounts (country United States), one for each supplier that gets paid.
 
-Create a **Merchant** app linked to the business account and enable **Payouts**. To show the account balance on the Payments page also enable **Transaction Search** on the app; without it the card shows n/a and everything else works. Put the supplier emails into `backend/seed.py`.
+Create a **Merchant** app linked to the business account and enable **Payouts**. Put the supplier emails into `backend/seed.py`.
 
 Check the credentials before building on them:
 
@@ -177,7 +177,6 @@ Never commit `.env`. It is in `.gitignore`.
 | `GET /invoices`, `GET /invoices/{number}` | Invoice data |
 | `GET /suppliers` | Supplier data |
 | `POST /agent/chat` | Talk to the agent |
-| `GET /payments/balance` | PayPal account balance (cached 20 s). Always 200: `{ ok: false, error }` when PayPal refuses, for example without Transaction Search |
 | `POST /payments`, `GET /payments`, `GET /payments/{id}`, `GET /payments/{id}/trace` | Request a payment, list requests, one request, its audit steps with timestamps. Every `reasons` item is `{ code, level, message }` |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
 | `GET /health` | Liveness check |
@@ -225,6 +224,8 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 - Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
+- Suppliers and their verified flag come from `backend/seed.py`. There is no screen to add or verify a supplier yet (new invoices can be added in the app, for existing suppliers).
+- Payment status can lag: a sandbox payout stays pending for about 35 seconds. The PayPal webhook, the Payments page poll and the Refresh button settle it.
 - Planned: LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
 - Known security gaps are listed in [docs/security.md](docs/security.md).
 - Data sharing: with AI mode on, chat messages and the invoice details the agent looks up go to the LLM provider (Groq on the live demo). Payout requests go to the PayPal sandbox. The `/privacy` page says this in plain words.

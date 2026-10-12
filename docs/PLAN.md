@@ -15,6 +15,8 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 | Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Done, tag `v0.2-trust` |
 | Layer 3 detection (extra fraud signals, structured reasons) | Done, tag `v0.3-detection`. LLM classifier not built |
 | Frontend (Layer 4) | All 8 pages built and calling the real API, plus New invoice form, vendor history and a total paid chart. Base path deep link tested (see `docs/layer4.md`). Polish checks (four states, reduced motion) still open |
+| Agent | Groq through the OpenAI compatible client (model set by `LLM_MODEL`), rules fallback when the model fails. Payout polling after a send was removed, so replies no longer wait about 18 s. `list_invoices` accepts a null status (gpt-oss sent one) |
+| Privacy | `/privacy` page (privacy and terms in one), linked from login and the footer, names Groq, PayPal sandbox and Google Fonts |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
 | Webhook | Built and verified live on 12 Oct (real sandbox event settled INV-001). Polling and Refresh still work without it |
 | Deploy | **Live** at https://paypilot.donambi.dev (served at the root, `/api` proxied, HTTPS, sandbox PayPal, demo tools off). `ci.yml` runs tests, `pip-audit` and the frontend build. No automatic deploy workflow, deploys are manual |
@@ -118,7 +120,7 @@ Set this in `.github/CODEOWNERS`:
 - [x] Base path support (`VITE_BASE=/paypilot/`, router basename, API follows the base) and test at `/paypilot/approvals` deep link (see `docs/layer4.md`)
 - [ ] All four states on every page, keyboard path, reduced motion
 - [x] Privacy and terms page at `/privacy`, linked from login and the footer
-- [x] PayPal balance card on Payments (needs Transaction Search on the app, not yet checked live)
+- [x] PayPal balance card tried and removed (see devlog): the Balances API is a 30 minute snapshot that does not match the dashboard
 - [x] Tamper banner and the Demo tools card
 - [x] Production build served by nginx (the `frontend` container, live)
 
@@ -131,14 +133,20 @@ Set this in `.github/CODEOWNERS`:
 - [ ] Elthiero: backend hardening (rate limit on login, error messages, health checks), final test run, README setup instructions verified from a clean clone
 - [ ] Alain: visual polish pass against the design preview, responsive check at 1440 and 1024, login screen
 - [ ] Both: demo script (`docs/demo-script.md`), record the video (script first, 2 takes), screenshots in `docs/screenshots/`
-- [ ] Both: Devpost text draft: problem, what it does, how we built it (golden rule), challenges, what is next. Read the official rules page again for required items (video length, repo link, test account or demo access)
+- [ ] Both: Devpost text draft: problem, what it does, how we built it (golden rule), challenges, what is next. Official rules (read 12 Oct), required items:
+  - public GitHub repo with the MIT license visible in About (done)
+  - working demo: live URL, with login credentials in the Devpost testing instructions field (not in the README), plus the note that a new browser registers a key and the policy must be signed again, and that New invoice creates more invoices to pay
+  - text description, the tools used and how (Groq, PayPal Payouts and webhooks, AG Grid, Claude Code), and a paragraph on how the project was significantly updated during the period (first commit 11 Oct, period opened 1 Oct)
+  - demo video under 3 minutes, public on YouTube, no PayPal logos, no copyrighted music
+  - no edits after Thu 12 Nov 12:00 PT (22:00 Kigali)
 
 ### Final days: Sun 8 to Tue 10 Nov (submit)
 
 - [ ] Sun 8: freeze the demo data and the video. Fix only blockers
 - [ ] Mon 9: a person who has not touched the project runs the README and the live demo, fix what they hit
 - [ ] Tue 10: submit in the morning Kigali time. Open the submission page, check the video plays, links work, repo is public, no secrets in history
-- [ ] Wed 11 and Thu 12 (until 22:00 Kigali): only fixes to the Devpost page if something is wrong
+- [ ] Wed 11 and Thu 12: fixes to the Devpost page only until Thu 12 Nov 12:00 PT (22:00 Kigali), the submission locks after that
+- [ ] Until the judging period ends (15 Dec): keep the live site, the Groq key and the PayPal sandbox app working, free to use, and re-seed if the demo invoices are used up
 
 ## 6. Backend task detail (Elthiero)
 

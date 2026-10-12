@@ -34,7 +34,6 @@ export interface Mandate { id: number; rules: Rules; policy_text: string; payloa
   signature: string | null; valid_until: string | null; active: boolean; verified: boolean; }
 export interface ApprovalItem { id: number; invoice: string; supplier: string; amount: number;
   currency: string; reasons: Reason[]; risk: Risk; created_at: string; cart_payload: string; }
-export interface PaypalBalance { ok: boolean; available?: number; currency?: string; error?: string; }
 export interface PaymentSummary { ok: boolean; payment_request_id: number; invoice: string; amount: number;
   decision: Decision; risk: Risk; reasons: Reason[]; status: string; note?: string;
   transaction: { id: number; status: string; payout_batch_id: string | null; paypal_txn_id: string | null } | null; }
