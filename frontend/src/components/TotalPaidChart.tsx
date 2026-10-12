@@ -32,7 +32,7 @@ export default function TotalPaidChart({ txns }: { txns: Transaction[] }) {
         {pts.length > 1 && <text x={W - pr} y={H - 8} textAnchor="end" fontSize="11" className="fill-ink">{when(new Date(t0 + span).toISOString())}</text>}
         <polyline points={line} fill="none" strokeWidth="2" className="stroke-ink" />
         {pts.map((p, i) => (
-          <circle key={i} cx={x(p.t)} cy={y(p.total)} r="5" className="fill-yellow stroke-ink"><title>{`${money(p.total)} after ${p.label}`}</title></circle>
+          <circle key={i} cx={x(p.t)} cy={y(p.total)} r="5" className="fill-blue stroke-ink"><title>{`${money(p.total)} after ${p.label}`}</title></circle>
         ))}
       </svg>
     </div>

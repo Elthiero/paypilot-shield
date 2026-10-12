@@ -58,10 +58,10 @@ export default function Shell() {
           {TABS.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end}
               title={label} aria-label={label}
-              className={({ isActive }) => `label flex items-center gap-1.5 px-2.5 min-[1100px]:px-3.5 ${isActive ? "bg-yellow" : "hover:bg-butter"}`}>
+              className={({ isActive }) => `label flex items-center gap-1.5 px-2.5 min-[1100px]:px-3.5 ${isActive ? "bg-blue text-white" : "hover:bg-sky"}`}>
               <Icon size={14} aria-hidden />
               <span className="hidden min-[1100px]:inline">{label}</span>
-              {label === "Approvals" && pending > 0 && <span className="bg-blue text-white rounded px-1.5 text-[10px]" aria-label={`${pending} pending`}>{pending}</span>}
+              {label === "Approvals" && pending > 0 && <span className="bg-ink text-white rounded px-1.5 text-[10px]" aria-label={`${pending} pending`}>{pending}</span>}
               {label === "Policy" && invalid && <span className="w-2 h-2 rounded-full bg-pink border border-ink" aria-label="Policy invalid" />}
             </NavLink>
           ))}

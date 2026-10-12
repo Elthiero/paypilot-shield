@@ -42,7 +42,7 @@ export default function Invoices() {
     { field: "amount", headerName: "Amount", type: "rightAligned", maxWidth: 140,
       valueFormatter: (p) => money(p.value, p.data?.currency), cellClass: "money" },
     { field: "status", headerName: "Status", minWidth: 210, cellRenderer: (p: ICellRendererParams<Invoice>) => <StatusBadge value={p.value} /> },
-    { field: "payee_email", headerName: "Payee email", minWidth: 240,
+    { field: "payee_email", headerName: "Payee email", minWidth: 340,
       cellRenderer: (p: ICellRendererParams<Invoice>) => p.data && mismatch(p.data)
         ? <span className="flex items-center gap-1.5 font-semibold" title="Differs from the supplier's last payout email"><TriangleAlert size={16} aria-hidden /><span className="sr-only">Differs from the last payout email. </span>{p.value}</span>
         : <span>{p.value}</span> },
@@ -72,7 +72,7 @@ export default function Invoices() {
       {!inv.error && <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Filter by status">
         {statuses.map((s) => (
           <button key={s} onClick={() => setFilter(s)} aria-pressed={filter === s}
-            className={`label border border-ink rounded px-2.5 py-1 ${filter === s ? "bg-yellow" : "bg-card hover:bg-butter"}`}>{s === "ALL" ? "All" : s.replace(/_/g, " ")}</button>
+            className={`label border border-ink rounded px-2.5 py-1 ${filter === s ? "bg-blue text-white" : "bg-card hover:bg-sky"}`}>{s === "ALL" ? "All" : s.replace(/_/g, " ")}</button>
         ))}
       </div>}
       <OpsGrid rows={inv.error ? null : rows} cols={cols} loading={inv.loading} onRowClicked={(r) => { setOpen(r); setResult(null); }}

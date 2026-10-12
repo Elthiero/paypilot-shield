@@ -93,7 +93,7 @@ export default function Payments() {
       <div className="flex mb-4" role="tablist">
         {(["requests", "payouts"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-            className={`label border border-ink px-4 py-2 -ml-[2px] first:ml-0 ${tab === t ? "bg-yellow" : "bg-card hover:bg-butter"}`}>{t === "requests" ? "Requests" : "Payouts"}</button>
+            className={`label border border-ink px-4 py-2 -ml-[2px] first:ml-0 ${tab === t ? "bg-blue text-white" : "bg-card hover:bg-sky"}`}>{t === "requests" ? "Requests" : "Payouts"}</button>
         ))}
       </div>
       {err && <ErrorState message={err} onRetry={() => { reqs.reload(); txns.reload(); }} />}

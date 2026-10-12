@@ -33,10 +33,10 @@ Define every color as a token. Never use raw hex in components. Every text and s
 | `paper` | `#FBFBF7` | Page background (with ruled lines) |
 | `rule` | `#E4E4DC` | Ruled lines on the paper background |
 | `card` | `#FFFFFF` | Cards, inputs, nav bar, table body |
-| `blue` | `#003087` | Primary action, user chat bubbles, links, step 1 tab (deep payments blue) |
+| `blue` | `#003087` | Primary color: primary buttons, active nav tab, active tabs and filters, grid header, user chat bubbles, links, step 1 tab (deep payments blue) |
 | `blue-mid` | `#0070BA` | Focus ring, link hover, active icons (mid payments blue) |
 | `cyan` | `#009CDE` | Step tab 3, info dots, decorative accents. Text on it is always `ink` |
-| `yellow` | `#FFC439` | Active nav tab, tape, step 2 tab, needs approval (payments gold) |
+| `yellow` | `#FFC439` | Tape, step 2 tab, needs approval, warnings, decorative stickers. Not used for navigation or grid chrome (payments gold) |
 | `pink` | `#FF5FA2` | Logo dot, bot avatar, blocked |
 | `green` | `#4ADE9A` | Auto pay, paid, verified |
 
@@ -46,7 +46,7 @@ Define every color as a token. Never use raw hex in components. Every text and s
 |---|---|---|
 | `mint` | `#C9F2DD` | Soft success fill, sandbox sticker, starter chip |
 | `rose` | `#FFC2DD` | Soft pink fill, starter chip |
-| `butter` | `#FFE9A8` | Selected grid row, soft warning fill |
+| `butter` | `#FFE9A8` | Soft warning fill, medium risk, expired |
 | `sky` | `#BFE6F7` | Soft info fill (pending, sent) |
 | `blush` | `#FFB3B0` | Soft danger fill for banners |
 
@@ -112,8 +112,8 @@ v2.1 swaps the original blue and yellow for colors inspired by PayPal's own prod
 Unchanged: `ink`, `paper`, `rule`, `card`, `pink`, `green` and the other tints. Pink stays the Blocked color and green stays Auto pay, so the decision mapping in 2.4 does not change.
 
 Where each reference applies:
-- **Dashboard feel (data screens):** deep `blue` for the nav accents, links and header text weight, `yellow` header row on grids, flat chips.
-- **Checkout feel (approval and signing moments):** `yellow` tape and active states, `blue` primary action, `cyan` accents on the signing modal and the seal.
+- **Dashboard feel (data screens):** deep `blue` for the active nav tab, primary buttons, links, active tabs and filters, and the `blue` header row on grids (white text), flat chips.
+- **Checkout feel (approval and signing moments):** `yellow` tape, `blue` primary action and active states, `cyan` accents on the signing modal and the seal.
 
 Brand rules:
 - These are inspired colors, not PayPal's brand assets. Do not use PayPal's logo, wordmark or typeface (PayPal Sans or PayPalOpen) anywhere.
@@ -199,7 +199,7 @@ Apply it to the page area. Cards, tables, inputs and modals are solid white on t
 **Top nav (48px, white, 2px `ink` bottom border)**
 - Left: logo dot (26px circle, `pink`, 2px outline, black check) and the word `PAYPILOT` in Silkscreen 14px.
 - Tabs in JetBrains Mono 11px bold uppercase, letter-spacing 0.08em, full nav height, 14px horizontal padding, each with a 12px Lucide icon: Agent, Policy, Approvals (with a blue count badge), Payments, Invoices, Suppliers.
-- Active tab: `yellow` background, `ink` text. Hover: `butter` background.
+- Active tab: `blue` background, white text. Hover: `sky` background. The Approvals count badge is `ink` with white text.
 - Right: Sandbox or Fake sticker (`mint`, 2px outline, 4px radius, dot), user email in mono 11px, Sign out button.
 - Replay is reached from other pages, not listed in the nav.
 
@@ -216,8 +216,8 @@ Apply it to the page area. Cards, tables, inputs and modals are solid white on t
 ### 6.2 Buttons
 | Variant | Style | Use |
 |---|---|---|
-| Primary | `ink` fill, white text, with a 18px `blue` square before the label, mono caps 12px, 2px outline | Send, Sign and approve, Draft |
-| Brand | `blue` fill, white text, 2px outline, `hard-sm` | Secondary strong actions |
+| Primary | `blue` fill, white text, mono caps 12px, 2px outline, `hard-sm` | Send, Sign and approve, Draft |
+| Brand | `blue` fill, white text, 2px outline, `hard-sm` (same look as Primary, kept for emphasis variants) | Secondary strong actions |
 | Secondary | white fill, 2px `ink` outline, mono caps 11px | Cancel, Sign out, Refresh |
 | Starter chip | colored fill (`yellow`, `mint`, `rose`), 2px outline, `hard-sm`, Inter 14px 600, rotated within +/-2deg | Suggested prompts |
 | Danger | `pink` fill, `ink` text, 2px outline, `hard-sm` | Reject, Simulate tampering |
@@ -256,12 +256,12 @@ Flat and readable. Wrap the grid in a white card (2px outline, `hard` shadow). B
   --ag-font-size: 13px;
   --ag-foreground-color: #111111;
   --ag-background-color: #FFFFFF;
-  --ag-header-background-color: #FFC439;
-  --ag-header-foreground-color: #111111;
+  --ag-header-background-color: #003087;
+  --ag-header-foreground-color: #FFFFFF;
   --ag-border-color: #111111;
   --ag-row-border-color: #E4E4DC;
   --ag-row-hover-color: #FBFBF7;
-  --ag-selected-row-background-color: #FFE9A8;
+  --ag-selected-row-background-color: #BFE6F7;
   --ag-range-selection-border-color: #0070BA;
   --ag-row-height: 46px;
   --ag-header-height: 44px;
@@ -282,7 +282,7 @@ Slides in from the right, 480px, white, 2px `ink` left outline, `hard-lg` shadow
 Full width, 2px `ink` outline, 2px radius, `hard-sm` shadow, 12px 16px padding, a left Lucide icon, bold title, one line of detail. Fill: `pink` for tamper and errors, `yellow` for warnings and "Drafted by AI", `mint` for success, `sky` for info. Text is `ink`.
 
 ### 6.12 Empty, loading, error
-- **Empty:** a white card with a 40px Lucide icon in a `yellow` circle (2px outline), a Gaegu line (22px) such as "nothing here yet", one plain Small sentence, and an optional primary button.
+- **Empty:** a white card with a 40px Lucide icon in a `cyan` circle (2px outline), a Gaegu line (22px) such as "nothing here yet", one plain Small sentence, and an optional primary button.
 - **Loading:** skeleton blocks in `#EFEFE8` with a 2px dashed `ink` outline and a gentle opacity pulse. Spinner only inside buttons.
 - **Error:** a `pink` banner with the server `detail` text and a Secondary "Try again" button.
 
@@ -304,7 +304,7 @@ This footer is part of the design. Never remove it.
 ### 7.2 Signing ceremony (modal)
 Used for policy signing and approval signing. 560px wide, white, 2px outline, `hard-lg` shadow, taped (6.6), backdrop `rgba(17,17,17,0.55)`. Does not rotate.
 
-1. Header: a 44px `yellow` circle (2px outline) with a `key-round` icon, H2 "Sign with your key", one line: "Your key never leaves this browser."
+1. Header: a 44px `cyan` circle (2px outline) with a `key-round` icon, H2 "Sign with your key", one line: "Your key never leaves this browser."
 2. Summary block: the facts being signed in a flat card (amount, payee, invoice, or policy limits).
 3. Collapsible "Exact data you are signing" using the code block (the payload string).
 4. Footer: Secondary "Cancel", Primary "Sign and approve" (or "Sign policy").
@@ -346,7 +346,7 @@ No parallax, no bouncing, no looping decorative animation. Rotations are static.
 
 - **Name:** PayPilot Shield. Short form: PayPilot.
 - **Logo:** a 26px `pink` circle with a 2px `ink` outline and a thick black check mark, next to the word `PAYPILOT` in Silkscreen 700. Build as inline SVG and text, no image file needed.
-- **Favicon and tab title:** the pink circle with the check on a `yellow` rounded square. Title pattern: `Page name | PayPilot Shield`.
+- **Favicon and tab title:** the pink circle with the check on a `blue` rounded square. Title pattern: `Page name | PayPilot Shield`.
 - **Login screen:** centered card on ruled paper. Gaegu note "welcome back!", H1 "Sign in", fields, Primary button. Beside it (or above under 1100px) three taped sticker lines: "AI proposes" (`sky`), "Rules decide" (`yellow`), "You sign" (`pink`), and the note "Sandbox demo. No real money moves."
 
 ## 10. Copy and voice
@@ -378,7 +378,7 @@ Behavior and data live in FRONTEND.md section 7. This is the visual layer.
 - **Other pages (Policy, Approvals, Payments, Invoices, Suppliers, Replay):** no hero. A page header row: Gaegu note on top (short, e.g. "your invoices"), H1, one line of description in `ink-mute`, primary action on the right. Content below on white cards.
 - **Invoices:** status filter chips (flat sticker style) above the grid. Row click opens the drawer. The untrusted description sits in a white box with a 2px dashed `ink` outline, a `triangle-alert` icon, and the caption "Untrusted invoice text. Treated as data, never as instructions." Rows with an email mismatch show a small `triangle-alert` icon with a tooltip.
 - **Suppliers:** same pattern as Invoices without a drawer. Verified column uses a `green` Verified chip or a plain `card` chip.
-- **Payments:** three stat cards on top (Paid total, Awaiting approval, Blocked), each a white card with a Silkscreen 32px number, a mono label, and a 32px icon in a `green`, `yellow` or `pink` circle. Below, a tab control (Requests, Payouts) in the nav tab style (active tab `yellow`), then the grid.
+- **Payments:** three stat cards on top (Paid total, Awaiting approval, Blocked), each a white card with a Silkscreen 32px number, a mono label, and a 32px icon in a `green`, `yellow` or `pink` circle. Below, a tab control (Requests, Payouts) in the nav tab style (active tab `blue`, white text), then the grid.
 - **Approvals:** a single column of decision cards (max width 720px, no rotation), each ending with Reject (Danger) and "Review and sign" (Primary). The signing ceremony opens in the modal.
 - **Policy:** two columns. Left: the active policy card (rules as a definition list), the Verified chip, valid until, history list. Right (380px): the editor card with the plain language box, Draft button, the form, and "Review and sign". The `yellow` banner "Drafted by AI. Not active until you sign." shows after drafting. A collapsed "Demo tools" card at the bottom holds the Danger button "Simulate tampering" (demo builds only).
 - **Replay:** header decision card, then the trace timeline (7.4), then a Secondary "Copy as JSON" button.

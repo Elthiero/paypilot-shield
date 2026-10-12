@@ -75,7 +75,7 @@ export default function SigningModal({ title = "Sign with your key", confirmLabe
         ) : (
           <>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-full bg-yellow border border-ink flex items-center justify-center shrink-0"><KeyRound size={20} aria-hidden /></div>
+              <div className="w-11 h-11 rounded-full bg-cyan border border-ink flex items-center justify-center shrink-0"><KeyRound size={20} aria-hidden /></div>
               <div>
                 <h2 id="sign-title">{title}</h2>
                 <p className="text-[13px] text-ink-mute">Your key never leaves this browser.</p>

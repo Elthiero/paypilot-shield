@@ -40,7 +40,7 @@ function PayoutChart({ payments, median }: { payments: SupplierAnalytics["paymen
       <line x1={pad} x2={W - pad} y1={H - pad} y2={H - pad} className="stroke-ink" />
       {payments.map((p, i) => (
         <g key={i}>
-          <rect x={x(i)} y={y(p.amount)} width={bw} height={H - pad - y(p.amount)} className="fill-yellow stroke-ink" />
+          <rect x={x(i)} y={y(p.amount)} width={bw} height={H - pad - y(p.amount)} className="fill-blue stroke-ink" />
           <text x={x(i) + bw / 2} y={y(p.amount) - 4} textAnchor="middle" fontSize="10" className="fill-ink">{money(p.amount, p.currency)}</text>
           <text x={x(i) + bw / 2} y={H - 8} textAnchor="middle" fontSize="10" className="fill-ink">{p.invoice}</text>
         </g>

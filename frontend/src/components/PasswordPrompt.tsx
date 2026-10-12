@@ -36,7 +36,7 @@ export default function PasswordPrompt({ title, onSubmit, onClose }: { title: st
       <form onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pw-title"
             className="bg-card border border-ink rounded shadow-hard-lg w-[420px] max-w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-yellow border border-ink flex items-center justify-center shrink-0"><KeyRound size={20} aria-hidden /></div>
+          <div className="w-11 h-11 rounded-full bg-cyan border border-ink flex items-center justify-center shrink-0"><KeyRound size={20} aria-hidden /></div>
           <h2 id="pw-title">{title}</h2>
         </div>
         <label className="block"><span className="label block mb-1">Password</span>
