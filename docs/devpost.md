@@ -30,10 +30,10 @@ What makes it trustworthy:
 ## How we built it
 
 - **Backend:** FastAPI, SQLAlchemy and PostgreSQL. PayPal Payouts sandbox for payouts, and PayPal webhooks with signature verification for confirmation.
-- **AI:** Groq (qwen/qwen3.8-27b at the time of writing) through an OpenAI compatible client. The agent has no tool that moves money. Its only way to ask for a payment is `submit_payment_request`. If the model fails, a rules matcher takes over, so the product keeps working.
+- **AI:** Groq (openai/gpt-oss-120b) through an OpenAI compatible client. The agent has no tool that moves money. Its only way to ask for a payment is `submit_payment_request`. If the model fails, a rules matcher takes over, so the product keeps working.
 - **Frontend:** React, Vite, TypeScript and Tailwind. AG Grid powers the Payments, Invoices and Suppliers screens. The WebCrypto API does the signing.
 - **Deploy:** Docker Compose with nginx, HTTPS, and security headers including a content security policy.
-- **Quality:** about 80 automated tests, including forged webhook signatures, replayed approvals, tampered policies and a race on the monthly budget (an advisory lock keeps two payouts from overspending it). CI runs the tests, a dependency audit and the frontend build.
+- **Quality:** 90+ automated tests, including forged webhook signatures, replayed approvals, tampered policies and a race on the monthly budget (an advisory lock keeps two payouts from overspending it). CI runs the tests, a dependency audit and the frontend build.
 - **Claude Code** was our pair programmer for most of the code, tests and documentation.
 
 The golden rule we built around: **the model proposes, deterministic code decides.** AI can raise a request's risk level but can never lower it, and invoice text is treated as untrusted data.
@@ -67,7 +67,7 @@ Python, FastAPI, SQLAlchemy, PostgreSQL, PayPal Payouts API (sandbox), PayPal we
 ## Tools used and how (for the "tools" field)
 
 - **PayPal Developer Platform (sandbox):** Payouts API to pay suppliers, OAuth for access, and webhooks verified with `verify-webhook-signature` to confirm payouts.
-- **Groq (qwen/qwen3.8-27b):** the agent that reads the owner's request, looks up invoices and asks for payments through one tool. It explains the outcome in plain words.
+- **Groq (openai/gpt-oss-120b):** the agent that reads the owner's request, looks up invoices and asks for payments through one tool. It explains the outcome in plain words.
 - **AG Grid:** the operations grids for payments, payouts, invoices and suppliers.
 - **Claude Code:** AI-assisted development of the code, tests and docs.
 
