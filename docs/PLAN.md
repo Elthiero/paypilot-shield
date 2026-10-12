@@ -13,14 +13,16 @@ Put this file at `docs/PLAN.md`. Update the checkboxes in your pull requests.
 |---|---|
 | Layer 1 core (login, invoices, pipeline, agent with rules fallback, real sandbox payout, audit log) | Done, tag `v0.1-core` |
 | Layer 2 trust (signed policy, signed approvals, verifier, tamper test) | Done, tag `v0.2-trust` |
-| Layer 3 detection (extra fraud signals, structured reasons) | Done, tag `v0.3-detection`. LLM classifier not built |
-| Frontend (Layer 4) | All 8 pages built and calling the real API, plus New invoice form, vendor history and a total paid chart. Base path deep link tested (see `docs/layer4.md`). Polish checks (four states, reduced motion) still open |
+| Layer 3 detection (extra fraud signals, structured reasons) | Done, tag `v0.3-detection`. AI screen added after the tag: it can only raise a request to NEEDS_APPROVAL (see `docs/layer3.md`) |
+| Frontend (Layer 4) | All 8 pages built and calling the real API, plus New invoice form, vendor history, a total paid chart, Add supplier, and verify supplier by signature with a trust history. Base path deep link tested (see `docs/layer4.md`). Polish checks (four states, reduced motion) still open |
 | Agent | Groq through the OpenAI compatible client (model set by `LLM_MODEL`), rules fallback when the model fails. Payout polling after a send was removed, so replies no longer wait about 18 s. `list_invoices` accepts a null status (gpt-oss sent one) |
-| Privacy | `/privacy` page (privacy and terms in one), linked from login and the footer, names Groq, PayPal sandbox and Google Fonts |
+| Privacy | `/privacy` page (privacy and terms in one), linked from login and the footer, names Groq and the PayPal sandbox. Fonts are self-hosted, so Google is no longer named |
 | Docs | FRONTEND.md and DESIGN.md written. Design preview approved |
 | Webhook | Built and verified live on 12 Oct (real sandbox event settled INV-001). Polling and Refresh still work without it |
-| Deploy | **Live** at https://paypilot.donambi.dev (served at the root, `/api` proxied, HTTPS, sandbox PayPal, demo tools off). `ci.yml` runs tests, `pip-audit` and the frontend build. No automatic deploy workflow, deploys are manual |
-| Security | Review of 12 Oct done and fixed, see `docs/security.md` for the open items |
+| Deploy | **Live** at https://paypilot.donambi.dev (served at the root, `/api` proxied, HTTPS, sandbox PayPal, demo tools off). `ci.yml` runs ruff, tests, `pip-audit`, the type check, the frontend build and a Playwright run of the demo path. No automatic deploy workflow, deploys are manual |
+| Suppliers | Add supplier (`cc2f476`) (starts unverified). Verifying needs the owner's signature over name, country and PayPal email, stored in `supplier_verifications` and the audit log. Trust history shows in the supplier drawer |
+| Security | Review of 12 Oct done and fixed. Login token moved from `sessionStorage` to an httpOnly SameSite=Strict cookie with a CSRF header on writes. See `docs/security.md` for the open items |
+| Tests | 86 backend tests, plus one Playwright test (`frontend/e2e`) that runs the demo path through the real UI with the fake PayPal. Landed in `29edb19` with the cookie login, AI screen, signed supplier verification and self-hosted fonts. Its new CI jobs have not run on GitHub yet |
 
 ## 2. Gates (dates that must hold)
 
@@ -110,6 +112,8 @@ Set this in `.github/CODEOWNERS`:
 
 **Elthiero (backend)**
 - [x] Layer 3 signals (keep small): duplicate invoice, amount outlier vs supplier history, new payee email, round amount pattern, prompt injection phrases. Each adds a reason to the audit log
+- [x] AI screen (`services/classifier.py`): can only add a review reason, never block or clear a signal
+- [x] Supplier endpoints: add, verify by signature, trust history in the analytics response
 - [x] PayPal webhook endpoint with signature verification (`PAYPAL_WEBHOOK_ID`), idempotent handling. Verified live on 12 Oct against a real sandbox event
 - [x] Deploy to the VPS: `docker-compose.yml`, Postgres via `DATABASE_URL`, HTTPS. Live at https://paypilot.donambi.dev (root path, so `/paypilot/` is not used in production)
 - [ ] Deploy workflow (deploys are manual today)
@@ -130,7 +134,7 @@ Set this in `.github/CODEOWNERS`:
 
 - [ ] **Tue 3 Nov: feature freeze.** Bug fixes only
 - [ ] Both: bug bash on the live URL, one person drives the demo path while the other watches for errors (console and server logs)
-- [ ] Elthiero: backend hardening (rate limit on login, error messages, health checks), final test run, README setup instructions verified from a clean clone
+- [ ] Elthiero: backend hardening (login rate limit done, httpOnly cookie done; error messages and health checks open), final test run, README setup instructions verified from a clean clone
 - [ ] Alain: visual polish pass against the design preview, responsive check at 1440 and 1024, login screen
 - [ ] Both: demo script (`docs/demo-script.md`), record the video (script first, 2 takes), screenshots in `docs/screenshots/`
 - [x] Draft written in `docs/devpost.md` (fill in the demo password at submit time, then review). Original item: Devpost text draft: problem, what it does, how we built it (golden rule), challenges, what is next. Official rules (read 12 Oct), required items:
@@ -181,7 +185,7 @@ Rehearse this path every Friday starting 23 Oct, and record how long it takes (t
 1. Layer 3 signals beyond duplicate invoice and new payee email
 2. LLM drafting of the policy (keep the rule parser)
 3. PayPal webhook (keep the manual Refresh button)
-4. Suppliers page (read only list is enough)
+4. Supplier add and verify (the list and history are enough)
 5. VPS deploy (run locally and record the demo from there)
 
 **Never cut:** the signed policy, the signed approval, the tamper test, the audit replay, the BLOCKED demo. They are the product.
