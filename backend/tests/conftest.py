@@ -2,7 +2,8 @@ import os
 import tempfile
 
 _tmp = tempfile.mkdtemp()
-os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{_tmp}/test.db"
+# TEST_DATABASE_URL runs the suite on another database (a throwaway Postgres). It is wiped by the tests.
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or f"sqlite+pysqlite:///{_tmp}/test.db"
 os.environ["APP_ENV"] = "development"  # mounts the dev tamper routes
 os.environ["PAYPAL_MODE"] = "fake"
 os.environ["LLM_API_KEY"] = ""
@@ -62,9 +63,7 @@ def spy():
 @pytest.fixture()
 def client(db):
     from fastapi.testclient import TestClient
-    from app.deps import login_limiter
     from app.main import app
-    login_limiter.clear()
     with TestClient(app) as c:
         yield c
 

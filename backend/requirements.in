@@ -1,0 +1,15 @@
+# Direct dependencies. requirements.txt is generated from this file and pins every version:
+#   uv pip compile requirements.in -o requirements.txt --python-version 3.11 --generate-hashes
+fastapi
+uvicorn[standard]
+sqlalchemy>=2.0
+pydantic>=2
+pydantic-settings
+pyjwt
+bcrypt
+cryptography
+httpx
+anthropic
+openai
+pytest
+psycopg[binary]

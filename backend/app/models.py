@@ -86,3 +86,10 @@ class AuditEvent(Base):
     step: Mapped[str] = mapped_column(String(50))
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class LoginFailure(Base):
+    __tablename__ = "login_failures"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client: Mapped[str] = mapped_column(String(400), index=True)  # "ip|email"
+    at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

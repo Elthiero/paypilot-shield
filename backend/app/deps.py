@@ -1,15 +1,14 @@
-import time
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from .config import settings
 from .db import get_db
-from .models import User
+from .models import LoginFailure, User
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -29,28 +28,28 @@ DUMMY_HASH = hash_password("not-a-real-password")
 
 
 class LoginLimiter:
-    """Blocks a client and email pair after too many failures in a window.
-    ponytail: in memory, per process, so it resets on restart; use Redis or the DB if the API runs on several workers."""
+    """Blocks a client and email pair after too many failures in a window. Failures live in the database,
+    so they survive restarts and are shared by every worker."""
 
     def __init__(self, max_fails: int = 5, window: int = 300):
-        self.max_fails, self.window, self.fails = max_fails, window, {}
+        self.max_fails, self.window = max_fails, timedelta(seconds=window)
 
-    def _recent(self, key) -> list:
-        now = time.monotonic()
-        self.fails[key] = [t for t in self.fails.get(key, []) if now - t < self.window]
-        return self.fails[key]
+    def _recent(self, db, key):
+        return db.query(LoginFailure).filter(LoginFailure.client == "|".join(key),
+                                             LoginFailure.at > datetime.utcnow() - self.window)
 
-    def blocked(self, key) -> bool:
-        return len(self._recent(key)) >= self.max_fails
+    def blocked(self, db, key) -> bool:
+        return self._recent(db, key).count() >= self.max_fails
 
-    def fail(self, key) -> None:
-        self._recent(key).append(time.monotonic())
+    def fail(self, db, key) -> None:
+        now = datetime.utcnow()
+        db.query(LoginFailure).filter(LoginFailure.at < now - self.window).delete()  # forget old rows
+        db.add(LoginFailure(client="|".join(key), at=now))
+        db.commit()
 
-    def reset(self, key) -> None:
-        self.fails.pop(key, None)
-
-    def clear(self) -> None:
-        self.fails.clear()
+    def reset(self, db, key) -> None:
+        db.query(LoginFailure).filter(LoginFailure.client == "|".join(key)).delete()
+        db.commit()
 
 
 login_limiter = LoginLimiter()
@@ -70,7 +69,7 @@ def current_user(
     try:
         data = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"])
         user = db.get(User, int(data["sub"]))
-    except (JWTError, KeyError, ValueError):
+    except (jwt.PyJWTError, KeyError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")
     if user is None:
         raise HTTPException(status_code=401, detail="Unknown user")

@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import httpx
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from ..config import settings
 from ..models import AuditEvent, Invoice, Mandate, PaymentRequest, Supplier, Transaction, User
@@ -117,8 +117,16 @@ def sender_batch_id(pr: PaymentRequest) -> str:
     return f"pp{pr.id}-{calendar.timegm(pr.created_at.utctimetuple())}"
 
 
+PAYOUT_LOCK = 7001  # arbitrary advisory lock id
+
+
 def execute_payout(db, pr: PaymentRequest, inv: Invoice, paypal, wait: bool = True) -> None:
     """The only place in the codebase that moves money. The verifier runs here, so no caller can skip it."""
+    # One payout at a time reads and spends the monthly budget. The lock is released by the caller's commit,
+    # so the next payout sees this one's transaction. SQLite (tests, dev) has one writer, so it needs none.
+    # ponytail: a global lock serializes payouts, fine at this volume.
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": PAYOUT_LOCK})
     mandate, user = active_policy(db)
     paid = db.query(Transaction).filter(Transaction.payment_request_id == pr.id,
                                         Transaction.status.in_(["SUCCESS", "PENDING"])).count() > 0

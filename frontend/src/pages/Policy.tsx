@@ -3,6 +3,7 @@ import Banner from "../components/Banner";
 import Button from "../components/Button";
 import ErrorState from "../components/ErrorState";
 import PageHeader from "../components/PageHeader";
+import PasswordPrompt from "../components/PasswordPrompt";
 import PolicyEditor from "../components/PolicyEditor";
 import type { PolicyDraft } from "../components/PolicyEditor";
 import { refreshShell } from "../components/Shell";
@@ -39,6 +40,7 @@ export default function Policy() {
   const [draft, setDraft] = useState<PolicyDraft | null>(null);
   const [prep, setPrep] = useState<{ mandate_id: number; payload: string } | null>(null);
   const [prepError, setPrepError] = useState<string | null>(null);
+  const [askPassword, setAskPassword] = useState(false);
   const [notice, setNotice] = useState<{ kind: "info" | "error"; text: string } | null>(null);
 
   const reloadAll = () => { active.reload(); history.reload(); refreshShell(); };
@@ -69,16 +71,10 @@ export default function Policy() {
     }
   };
 
-  const reset = async () => {
-    try {
-      const password = window.prompt("Enter your password to replace the signing key");
-      if (!password) return;
-      await resetKey(password);
-      setNotice({ kind: "info", text: "New signing key created. Sign the policy again." });
-      reloadAll();
-    } catch (e) {
-      setNotice({ kind: "error", text: e instanceof Error ? e.message : "Could not reset the key." });
-    }
+  const reset = async (password: string) => {
+    await resetKey(password);
+    setNotice({ kind: "info", text: "New signing key created. Sign the policy again." });
+    reloadAll();
   };
 
   const m = active.data;
@@ -110,7 +106,7 @@ export default function Policy() {
           <details className="card">
             <summary className="label cursor-pointer">Demo tools</summary>
             <div className="mt-3 flex gap-3 flex-wrap">
-              <Button variant="secondary" onClick={reset}>Reset signing key</Button>
+              <Button variant="secondary" onClick={() => setAskPassword(true)}>Reset signing key</Button>
               {health?.dev_tools && <Button variant="danger" onClick={tamper} disabled={!m}>Simulate tampering</Button>}
             </div>
           </details>
@@ -134,6 +130,7 @@ export default function Policy() {
           }
         />
       )}
+      {askPassword && <PasswordPrompt title="Replace the signing key" onSubmit={reset} onClose={() => setAskPassword(false)} />}
     </div>
   );
 }

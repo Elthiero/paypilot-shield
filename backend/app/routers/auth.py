@@ -13,15 +13,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/login")
 def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
     key = (request.client.host if request.client else "?", body.email.lower())
-    if login_limiter.blocked(key):
+    if login_limiter.blocked(db, key):
         raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in a few minutes.")
     user = db.query(User).filter_by(email=body.email).first()
     # always run bcrypt so the response time does not reveal whether the email exists
     ok = verify_password(body.password, user.password_hash if user else DUMMY_HASH)
     if not user or not ok:
-        login_limiter.fail(key)
+        login_limiter.fail(db, key)
         raise HTTPException(status_code=401, detail="Wrong email or password")
-    login_limiter.reset(key)
+    login_limiter.reset(db, key)
     return {"token": create_token(user.id), "email": user.email}
 
 

@@ -11,6 +11,7 @@ import Spinner from "../components/Spinner";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
+import PasswordPrompt from "../components/PasswordPrompt";
 import { hasKeypair, registerKey } from "../lib/crypto";
 import { money, reasonText } from "../lib/format";
 import type { ApprovalItem, PaymentSummary } from "../lib/types";
@@ -20,6 +21,7 @@ export default function Approvals() {
   const [signing, setSigning] = useState<ApprovalItem | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [missingKey, setMissingKey] = useState(false);
+  const [askPassword, setAskPassword] = useState(false);
 
   const open = async (item: ApprovalItem) => {
     setMissingKey(!(await hasKeypair().catch(() => false)));
@@ -74,7 +76,7 @@ export default function Approvals() {
               <p><span className="label">Invoice</span> {signing.invoice} ({signing.supplier})</p>
               <p><span className="label">Amount</span> <span className="money font-bold">{money(signing.amount, signing.currency)}</span></p>
               {missingKey && (
-                <Banner kind="warn" title="This browser has no signing key" action={<button className="btn-secondary" onClick={async () => { const pw = window.prompt("Enter your password to create a new signing key"); if (!pw) return; await registerKey(pw); setMissingKey(false); }}>Create new key</button>}>
+                <Banner kind="warn" title="This browser has no signing key" action={<button className="btn-secondary" onClick={() => setAskPassword(true)}>Create new key</button>}>
                   Create a new key to approve payments. You will need to sign the policy again.
                 </Banner>
               )}
@@ -82,6 +84,7 @@ export default function Approvals() {
           }
         />
       )}
+      {askPassword && <PasswordPrompt title="Create a new signing key" onSubmit={async (pw) => { await registerKey(pw); setMissingKey(false); }} onClose={() => setAskPassword(false)} />}
     </div>
   );
 }

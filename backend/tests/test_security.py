@@ -71,3 +71,14 @@ def test_second_request_for_a_claimed_invoice_pays_nothing(db, spy):
     other.close()
     r = submit_payment_request(db, "INV-001", paypal=spy)
     assert r["ok"] is False and spy.payouts == []
+
+
+def test_login_limiter_blocks_after_five_failures_and_is_stored(client, db):
+    from app.models import LoginFailure
+    bad = {"email": "owner@paypilot.demo", "password": "nope"}
+    assert [client.post("/auth/login", json=bad).status_code for _ in range(5)] == [401] * 5
+    assert client.post("/auth/login", json=bad).status_code == 429
+    good = {"email": "owner@paypilot.demo", "password": "test-pass"}
+    assert client.post("/auth/login", json=good).status_code == 429  # blocked even with the right password
+    assert db.query(LoginFailure).count() == 5  # in the database, so a restart does not reset it
+    assert client.post("/auth/login", json={"email": "other@paypilot.demo", "password": "x"}).status_code == 401  # other email unaffected
