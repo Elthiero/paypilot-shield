@@ -118,6 +118,7 @@ Set this in `.github/CODEOWNERS`:
 - [x] Base path support (`VITE_BASE=/paypilot/`, router basename, API follows the base) and test at `/paypilot/approvals` deep link (see `docs/layer4.md`)
 - [ ] All four states on every page, keyboard path, reduced motion
 - [x] Privacy and terms page at `/privacy`, linked from login and the footer
+- [x] PayPal balance card on Payments (needs Transaction Search on the app, not yet checked live)
 - [x] Tamper banner and the Demo tools card
 - [x] Production build served by nginx (the `frontend` container, live)
 

@@ -108,7 +108,7 @@ In the PayPal developer dashboard (Testing Tools, Sandbox Accounts) create:
 - 1 **Business** account (country United States), funded. This is the sender.
 - 3 **Personal** accounts (country United States), one for each supplier that gets paid.
 
-Create a **Merchant** app linked to the business account and enable **Payouts**. Put the supplier emails into `backend/seed.py`.
+Create a **Merchant** app linked to the business account and enable **Payouts**. To show the account balance on the Payments page also enable **Transaction Search** on the app; without it the card shows n/a and everything else works. Put the supplier emails into `backend/seed.py`.
 
 Check the credentials before building on them:
 
@@ -177,6 +177,7 @@ Never commit `.env`. It is in `.gitignore`.
 | `GET /invoices`, `GET /invoices/{number}` | Invoice data |
 | `GET /suppliers` | Supplier data |
 | `POST /agent/chat` | Talk to the agent |
+| `GET /payments/balance` | PayPal account balance (cached 20 s). Always 200: `{ ok: false, error }` when PayPal refuses, for example without Transaction Search |
 | `POST /payments`, `GET /payments`, `GET /payments/{id}`, `GET /payments/{id}/trace` | Request a payment, list requests, one request, its audit steps with timestamps. Every `reasons` item is `{ code, level, message }` |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
 | `GET /health` | Liveness check |

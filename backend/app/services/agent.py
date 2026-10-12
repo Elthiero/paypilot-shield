@@ -19,7 +19,7 @@ MAX_BULK = 10  # "pay all pending" stops here
 
 TOOLS = [
     {"name": "list_invoices", "description": "List invoices with status. Optionally only those with one status.",
-     "input_schema": {"type": "object", "properties": {"status": {"type": "string", "enum": STATUSES}}}},
+     "input_schema": {"type": "object", "properties": {"status": {"type": ["string", "null"], "enum": STATUSES + [None]}}}},  # some models send null for "no filter"
     {"name": "get_invoice", "description": "Get details of one invoice, e.g. INV-001.",
      "input_schema": {"type": "object", "properties": {"number": {"type": "string"}}, "required": ["number"]}},
     {"name": "get_supplier", "description": "Get a supplier by name.",

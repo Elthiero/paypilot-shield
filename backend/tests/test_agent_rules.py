@@ -45,3 +45,11 @@ def test_pay_all_with_nothing_pending(db):
     for n in ("INV-001", "INV-002", "INV-003", "INV-004", "INV-005"):
         submit_payment_request(db, n)
     assert "No pending" in say(db, "pay all pending")["reply"]
+
+
+def test_list_invoices_accepts_a_null_status(db):
+    # gpt-oss sends {"status": null} for "no filter"; Groq rejects the call unless the schema allows it
+    from app.services.agent import TOOLS, run_tool
+    schema = next(t for t in TOOLS if t["name"] == "list_invoices")["input_schema"]["properties"]["status"]
+    assert "null" in schema["type"] and None in schema["enum"]
+    assert len(run_tool(db, "list_invoices", {"status": None})["invoices"]) == len(run_tool(db, "list_invoices", {})["invoices"])

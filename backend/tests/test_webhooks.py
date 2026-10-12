@@ -75,3 +75,27 @@ def test_real_client_sends_the_raw_event_and_fails_closed(monkeypatch):
     assert c.verify_webhook({}, raw) is False  # missing headers
     monkeypatch.setattr(settings, "paypal_webhook_id", "")
     assert c.verify_webhook(h, raw) is False  # no webhook id configured
+
+
+def test_real_client_reads_the_primary_balance(monkeypatch):
+    from app.services import paypal_client as pc
+
+    class R:
+        def __init__(self, data): self.data = data
+        def raise_for_status(self): pass
+        def json(self): return self.data
+
+    c = pc.PayPalClient()
+    monkeypatch.setattr(c, "_auth", lambda: "tok")
+    body = {"balances": [
+        {"currency": "EUR", "primary": False, "available_balance": {"currency_code": "EUR", "value": "1.00"}},
+        {"currency": "USD", "primary": True, "total_balance": {"currency_code": "USD", "value": "900.00"},
+         "available_balance": {"currency_code": "USD", "value": "812.50"}}]}
+    monkeypatch.setattr(pc.httpx, "get", lambda url, **kw: R(body))
+    assert c.get_balance() == {"currency": "USD", "available": 812.5}
+    monkeypatch.setattr(pc.httpx, "get", lambda url, **kw: R({"balances": []}))
+    try:
+        c.get_balance()
+        assert False, "empty balances must raise"
+    except ValueError:
+        pass

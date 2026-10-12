@@ -1,3 +1,6 @@
+import logging
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -5,8 +8,10 @@ from ..db import get_db
 from ..deps import current_user
 from ..models import Invoice, PaymentRequest, Supplier
 from ..schemas import PaymentIn
+from ..services.paypal_client import get_paypal
 from ..services.pipeline import get_trace, submit_payment_request, summarize
 
+log = logging.getLogger(__name__)
 router = APIRouter(prefix="/payments", tags=["payments"], dependencies=[Depends(current_user)])
 
 
@@ -20,6 +25,23 @@ def list_requests(db: Session = Depends(get_db)):
          "reasons": p.reasons, "status": p.status, "created_at": p.created_at.isoformat()}
         for p, n in rows
     ]
+
+
+_balance = {"at": 0.0, "value": None}
+
+
+@router.get("/balance")
+def paypal_balance():
+    """The PayPal account balance, cached for 20 s. Never an error: the page just shows it as unavailable."""
+    if _balance["value"] is None or time.time() - _balance["at"] > 20:
+        try:
+            _balance["value"] = {"ok": True, **get_paypal().get_balance()}
+        except Exception as e:  # missing Transaction Search permission, outage, bad credentials
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            log.warning("PayPal balance unavailable: %s", e)
+            _balance["value"] = {"ok": False, "error": f"PayPal returned {code}" if code else "PayPal balance unavailable"}
+        _balance["at"] = time.time()
+    return _balance["value"]
 
 
 @router.get("/{pr_id}/trace")

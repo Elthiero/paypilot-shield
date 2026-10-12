@@ -69,6 +69,18 @@ class PayPalClient:
         r.raise_for_status()
         return r.json()
 
+    def get_balance(self) -> dict:
+        """Balance of the account behind the app's credentials. Needs Transaction Search on the PayPal app."""
+        r = httpx.get(f"{settings.paypal_base_url}/v1/reporting/balances", params={"currency_code": "USD"},
+                      headers=self._headers(), timeout=15)
+        r.raise_for_status()
+        rows = r.json().get("balances") or []
+        if not rows:
+            raise ValueError("PayPal returned no balances")
+        b = next((x for x in rows if x.get("primary")), rows[0])
+        value = (b.get("available_balance") or b.get("total_balance"))["value"]
+        return {"currency": b.get("currency", "USD"), "available": float(value)}
+
     def verify_webhook(self, headers: dict, raw_body: bytes) -> bool:
         """Ask PayPal to check the signature. The event is sent as the raw text PayPal signed, not re-serialised."""
         h = {k: headers.get(f"paypal-{k}") for k in ("auth-algo", "cert-url", "transmission-id", "transmission-sig", "transmission-time")}
@@ -90,6 +102,9 @@ class FakePayPalClient:
 
     def send_payout(self, request_id, email, amount, currency="USD", note=""):
         return {"batch_header": {"payout_batch_id": "FAKE" + uuid.uuid4().hex[:8], "batch_status": "PENDING"}}
+
+    def get_balance(self):
+        return {"currency": "USD", "available": 10000.0}
 
     def verify_webhook(self, headers, raw_body):
         return headers.get("paypal-transmission-sig") == "valid"  # tests send "valid" or anything else
