@@ -70,6 +70,6 @@ Backend tests cover the matcher, status filter, "pay all pending" and `/health` 
 ## Known gaps
 
 - No automated frontend tests and no browser tests in CI. The Playwright script above is manual.
-- Loading, empty and error states come from the shared `OpsGrid`, `Spinner`, `EmptyState` and `ErrorState`. I did not check every page by hand for all four states.
+- Loading, empty and error states come from the shared `OpsGrid`, `Spinner`, `EmptyState` and `ErrorState`. `frontend/e2e/states.spec.ts` checks loading, empty and error-with-retry on Approvals, Payments, Invoices, Suppliers and Policy, a keyboard path into a grid row (Enter opens it, Escape closes it), and that reduced motion switches animations off. Replay and the chat are not covered by it.
 - Suppliers still come from `seed.py`. Invoices can be added from the UI (`POST /invoices`), but only for an existing supplier.
 - The 1024 px check was done on 12 Oct in headless Chromium: no page or overlay scrolls sideways, the console is clean, and the AG Grid tables scroll inside their card. Below 1100 px the top bar shows icons only (with labels for screen readers and tooltips). Not checked: widths below 1024 px and touch devices. The final visual polish pass is still open.

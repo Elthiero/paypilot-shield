@@ -93,6 +93,8 @@ export default function Policy() {
           </section>
           <section className="card space-y-3" aria-labelledby="hist-h">
             <h2 id="hist-h">History</h2>
+            {history.loading && !history.data && <Skeleton rows={2} />}
+            {history.error && <ErrorState message={history.error} onRetry={history.reload} />}
             {history.data?.length === 0 && <p className="text-[13px] text-ink-mute">No policies signed yet.</p>}
             <ul className="space-y-2">
               {history.data?.map((h) => (

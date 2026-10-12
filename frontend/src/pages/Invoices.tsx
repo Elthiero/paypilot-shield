@@ -32,7 +32,7 @@ export default function Invoices() {
   };
 
   const statuses = ["ALL", ...Array.from(new Set((inv.data ?? []).map((i) => i.status)))];
-  const rows = (inv.data ?? []).filter((i) => filter === "ALL" || i.status === filter);
+  const rows = inv.data && inv.data.filter((i) => filter === "ALL" || i.status === filter);
 
   const cols: ColDef<Invoice>[] = [
     { field: "number", headerName: "Number", maxWidth: 130 },

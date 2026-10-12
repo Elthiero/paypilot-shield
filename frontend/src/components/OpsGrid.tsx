@@ -1,5 +1,5 @@
 import { AgGridReact } from "ag-grid-react";
-import type { ColDef, RowClickedEvent } from "ag-grid-community";
+import type { CellKeyDownEvent, ColDef, RowClickedEvent } from "ag-grid-community";
 import { useMemo } from "react";
 import EmptyState from "./EmptyState";
 import Skeleton from "./Skeleton";
@@ -27,8 +27,9 @@ export default function OpsGrid<T>({ rows, cols, loading, empty, onRowClicked, h
           columnDefs={cols}
           defaultColDef={defaultColDef}
           animateRows={false}
-          suppressCellFocus
           onRowClicked={onRowClicked ? (e: RowClickedEvent<T>) => e.data && onRowClicked(e.data) : undefined}
+          // keyboard path: Tab into the grid, arrows to a row, Enter opens it like a click
+          onCellKeyDown={onRowClicked ? (e: CellKeyDownEvent<T>) => { if ((e.event as KeyboardEvent | null)?.key === "Enter" && e.data) onRowClicked(e.data); } : undefined}
         />
       </div>
     </div>
