@@ -20,3 +20,5 @@ Write three lines every day: what ran, what broke, next step.
 - 2026-10-12: 1024 px check on every page, drawer and modal. Fixed clipped badges and names in the Invoices and Payments tables (wider Status, Decision, Risk and Supplier columns).
 
 - 2026-10-12: react-router-dom 6 to 7.18 (only that package, the runtime advisory). Checked in Chromium at the root and under `/paypilot/` behind a prefix-stripping nginx: protected redirect, login, every nav link, back and forward, reload on a deep link, route params, unknown path, expired token redirect with `?expired=1`, sign out, and every API call under `<base>/api/`. `npm audit` is down to build-time tools only.
+
+- 2026-10-12: Docs brought in line with reality. The app is live at https://paypilot.donambi.dev (root path, HTTPS, sandbox PayPal, demo tools off). `docs/PLAN.md` and the README status now show deploy, seed/reset and nginx as done. Still open: PayPal webhook (stub), deploy workflow, four states and reduced motion checks, housekeeping (CODEOWNERS, branch protection), LLM classifier, submission items.

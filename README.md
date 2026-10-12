@@ -70,11 +70,11 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs
 | Layer 1, core (login, invoices, pipeline, agent, real sandbox payout, audit log) | Done |
 | Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | Done |
 | Layer 3, detection (extra fraud signals; AI classifier not built) | Done |
-| Layer 4, presentation (UI, AG Grid, replay page) | Built and tested in Docker, including the `/paypilot/` base path. Live deploy and the final polish pass still open |
+| Layer 4, presentation (UI, AG Grid, replay page) | Built, tested in Docker (including the `/paypilot/` base path) and live at https://paypilot.donambi.dev. Final polish pass still open |
 
 ## Screenshots
 
-Taken on a local run with the fake PayPal stand-in (see `docs/screenshots/` for all 17).
+Taken on a local run with the fake PayPal stand-in (see `docs/screenshots/` for all 18).
 
 | | |
 |---|---|
@@ -192,6 +192,8 @@ The suite uses the fake PayPal client and a temporary SQLite database, so it nee
 
 ## Deployment
 
+Live demo: https://paypilot.donambi.dev (PayPal sandbox). The production stack runs the compose setup below, served at the root path.
+
 ### Docker Compose
 
 ```bash
@@ -221,7 +223,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 - Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
-- Planned: PayPal webhook, LLM fraud classifier, fraud thresholds inside the signed policy, vendor history analytics, dispute handling, multi-user roles.
+- Planned: PayPal webhook, LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
 - Known security gaps are listed in [docs/security.md](docs/security.md).
 
 ## Team
