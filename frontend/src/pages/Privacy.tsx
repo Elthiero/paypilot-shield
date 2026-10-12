@@ -27,7 +27,7 @@ export default function Privacy() {
         </ul>
 
         <h2>In your browser</h2>
-        <p>A session token and your email are kept in session storage until you sign out or close the tab. The signing key is kept in IndexedDB. There are no analytics, advertising trackers or tracking cookies.</p>
+        <p>Your login is an httpOnly, same-site session cookie that page scripts cannot read, and your email is kept in session storage until you sign out or close the tab. It is a login cookie only, not a tracking cookie. The signing key is kept in IndexedDB. There are no analytics or advertising trackers.</p>
 
         <h2>Terms</h2>
         <p>Provided as is, for demonstration only, with no warranty. Demo data may be reset or deleted at any time.</p>

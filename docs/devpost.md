@@ -23,6 +23,7 @@ What makes it trustworthy:
 - **The owner signs the policy.** The spending limit, the monthly budget and the "verified suppliers only" rule are signed in the browser with a non-extractable ECDSA P-256 key. The key never leaves the browser. No valid signature means no payment.
 - **Truth checks on every invoice:** unverified supplier, changed payee email, duplicate invoice, amount outlier against the supplier's history, new payee, round-amount pattern, and prompt-injection text hidden inside the invoice.
 - **A last gate inside the payout code.** Just before PayPal is called, the signature and the invoice are verified again, so no code path can skip the rules. A tampered policy is refused.
+- **Signed supplier trust and an AI screen.** Verifying a supplier needs the owner's signature, and an AI screen can only raise risk to NEEDS_APPROVAL, never lower it.
 - **Replayable audit log.** Every step of every decision is stored and can be replayed on screen: invoice loaded, history checked, truth check, decision, verifier, payout.
 - **Real PayPal events.** PayPal's webhook is verified with PayPal's own signature check and settles the payout. The status is read back from PayPal, never trusted from the message.
 
@@ -57,7 +58,7 @@ Letting an agent act with money is mostly an authorization problem, not an AI pr
 
 ## What's next
 
-An LLM-based fraud classifier whose output can only raise risk, fraud thresholds inside the signed policy, adding and verifying suppliers with an owner signature, dispute handling, and multi-user roles.
+Fraud thresholds inside the signed policy, supplier edits and un-verify with a signature, dispute handling, and multi-user roles.
 
 ## Built with
 

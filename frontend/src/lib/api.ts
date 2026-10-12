@@ -12,13 +12,13 @@ export function apiBase(): string {
 }
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const token = sessionStorage.getItem("token");
   const hasBody = options.body !== undefined;
   const res = await fetch(BASE + path, {
     method: options.method ?? (hasBody ? "POST" : "GET"),
+    credentials: "include",  // the login token is an httpOnly cookie that scripts cannot read
     headers: {
       ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Requested-With": "paypilot",  // the server needs this on writes, which a cross-site form cannot send
     },
     body: hasBody ? JSON.stringify(options.body) : undefined,
   });
@@ -28,8 +28,8 @@ export async function api<T>(path: string, options: { method?: string; body?: un
       const j = await res.json();
       detail = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
     } catch { /* keep statusText */ }
-    if (res.status === 401 && path !== "/auth/login") {
-      sessionStorage.removeItem("token");
+    if (res.status === 401 && path !== "/auth/login" && path !== "/auth/logout") {
+      sessionStorage.removeItem("email");
       window.location.assign(import.meta.env.BASE_URL + "login?expired=1");
     }
     throw new ApiError(res.status, detail);

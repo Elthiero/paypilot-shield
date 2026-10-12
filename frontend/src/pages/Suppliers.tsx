@@ -1,6 +1,6 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { Plus, TriangleAlert } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddSupplierDrawer from "../components/AddSupplierDrawer";
 import Banner from "../components/Banner";
 import Button from "../components/Button";
@@ -8,10 +8,11 @@ import Drawer from "../components/Drawer";
 import ErrorState from "../components/ErrorState";
 import OpsGrid from "../components/OpsGrid";
 import PageHeader from "../components/PageHeader";
+import SigningModal from "../components/SigningModal";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
-import { ApiError, api } from "../lib/api";
+import { api } from "../lib/api";
 import { money, stepLabel, when } from "../lib/format";
 import type { Supplier, SupplierAnalytics } from "../lib/types";
 
@@ -60,29 +61,22 @@ function PayoutChart({ payments, median }: { payments: SupplierAnalytics["paymen
 
 function Analytics({ id, onClose, onVerified }: { id: number; onClose: () => void; onVerified: () => void }) {
   const { data: a, loading, error, reload } = useApi<SupplierAnalytics>(`/suppliers/${id}/analytics`);
-  const [busy, setBusy] = useState(false);
-  const [verr, setVerr] = useState<string | null>(null);
-  const verify = async () => {
-    setBusy(true);
-    setVerr(null);
-    try {
-      await api(`/suppliers/${id}/verify`, { method: "POST", body: {} });
-      reload();
-      onVerified();
-    } catch (err) {
-      setVerr(err instanceof ApiError ? err.detail : "Could not reach the server.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [signing, setSigning] = useState(false);
+  const [payload, setPayload] = useState<string | null>(null);
+  const [prepError, setPrepError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!signing) return;
+    api<{ payload: string }>(`/suppliers/${id}/verify-payload`).then((r) => setPayload(r.payload), () => setPrepError("Could not prepare the signing data."));
+  }, [signing, id]);
+  const closeSigning = () => { setSigning(false); setPayload(null); setPrepError(null); reload(); onVerified(); };
   return (
+    <>
     <Drawer title={a?.supplier.name ?? "Supplier"} onClose={onClose}>
       {loading && <Skeleton rows={3} />}
       {error && <Banner kind="error" title="Could not load this supplier">{error}</Banner>}
       {a && (
         <div className="space-y-4">
-          {!a.supplier.verified && <Button onClick={verify} loading={busy}>Verify supplier</Button>}
-          {verr && <Banner kind="error" title={verr} />}
+          {!a.supplier.verified && <Button onClick={() => setSigning(true)}>Verify supplier</Button>}
           <dl className="grid grid-cols-2 gap-3 text-[14px]">
             <div><dt className="label">Paid</dt><dd className="money">{money(a.paid_total)} in {a.paid_count}</dd></div>
             <div><dt className="label">Median payout</dt><dd className="money">{a.paid_median === null ? "None yet" : money(a.paid_median)}</dd></div>
@@ -96,6 +90,14 @@ function Analytics({ id, onClose, onVerified }: { id: number; onClose: () => voi
             <p className="text-[14px]">{Object.entries(a.flags).map(([k, v]) => `${stepLabel(k)} (${v})`).join(", ") || "None"}</p>
           </div>
           <div>
+            <p className="label">Trust history</p>
+            {a.events.length === 0 ? <p className="text-[14px]">No changes recorded. Seeded suppliers start verified.</p> : (
+              <ul className="text-[14px] space-y-1">
+                {a.events.map((e, i) => <li key={i}>{e.step === "supplier_created" ? "Added" : "Verified"}{e.by ? ` by ${e.by}` : ""}{e.signed ? " with a signature" : ""} · {when(e.at)}</li>)}
+              </ul>
+            )}
+          </div>
+          <div>
             <p className="label">Payment history</p>
             <PayoutChart payments={a.payments} median={a.paid_median} />
             {a.payments.length === 0 ? <p className="text-[14px]">No successful payouts yet.</p> : (
@@ -107,6 +109,12 @@ function Analytics({ id, onClose, onVerified }: { id: number; onClose: () => voi
         </div>
       )}
     </Drawer>
+      {signing && a && (
+        <SigningModal title="Verify this supplier" confirmLabel="Sign and verify" payload={payload} prepError={prepError} onClose={closeSigning}
+          summary={<p className="text-[14px]">You are trusting <strong>{a.supplier.name}</strong> ({a.supplier.country}). Once verified, its invoices are no longer blocked as unverified. Your signature covers this exact name, country and PayPal email.</p>}
+          onConfirm={async (signature) => { await api(`/suppliers/${id}/verify`, { body: { signature } }); return <>{a.supplier.name} is now verified.</>; }} />
+      )}
+    </>
   );
 }
 

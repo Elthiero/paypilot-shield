@@ -15,7 +15,11 @@ Layer 3 adds fraud signals to the truth check (`backend/app/services/truth_check
 | Round amount | Review | Amount is a multiple of 1000 and at least 1000, but only added when another signal already fired |
 | First payment | Review | No history and no last payout email (Layer 1) |
 
-Blocking gives `BLOCKED` with no payout. Review gives `NEEDS_APPROVAL`. Layer 3 never lowers risk and never calls an LLM.
+Blocking gives `BLOCKED` with no payout. Review gives `NEEDS_APPROVAL`. The rules never lower risk and never call an LLM.
+
+## AI screen
+
+When `LLM_API_KEY` and `LLM_MODEL` are set, `services/classifier.py` asks the model whether the invoice text looks like fraud (pressure, changed payment details, text aimed at an AI). It runs only when the rules found no block, and its only possible output is one review reason, `ai_suspicious`, which turns an `AUTO_PAY` into `NEEDS_APPROVAL`. The model cannot block, cannot clear a rule signal, and a timeout, error or anything but a literal `"suspicious": true` adds nothing. Tested in `test_truth_check.py`.
 
 ## Reasons
 
@@ -31,5 +35,4 @@ Constants at the top of `truth_check.py`: `OUTLIER_FACTOR`, `MIN_HISTORY`, `ROUN
 
 ## Not built
 
-- LLM classifier that can only raise risk. Optional, first to cut.
 - Thresholds are fixed in code, not part of the signed policy (it would change the signed payload).

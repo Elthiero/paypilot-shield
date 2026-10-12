@@ -69,7 +69,7 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs
 |---|---|
 | Layer 1, core (login, invoices, pipeline, agent, real sandbox payout, audit log) | Done |
 | Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | Done |
-| Layer 3, detection (extra fraud signals; AI classifier not built) | Done |
+| Layer 3, detection (extra fraud signals and an AI screen that can only raise risk) | Done |
 | Layer 4, presentation (UI, AG Grid, replay page) | Built, tested in Docker (including the `/paypilot/` base path) and live at https://paypilot.donambi.dev. Final polish pass still open |
 
 ## Screenshots

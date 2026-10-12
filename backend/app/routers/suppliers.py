@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user
-from ..models import Invoice, PaymentRequest, Supplier, Transaction
+from ..models import AuditEvent, Invoice, PaymentRequest, Supplier, SupplierVerification, Transaction, User
+from ..schemas import SignIn
 from ..services.audit import audit
+from ..services.mandate import build_supplier_payload, verify_signature
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"], dependencies=[Depends(current_user)])
 
@@ -34,15 +36,39 @@ def create_supplier(body: SupplierIn, db: Session = Depends(get_db), user=Depend
     return supplier_dict(sup)
 
 
-@router.post("/{supplier_id}/verify")
-def verify_supplier(supplier_id: int, db: Session = Depends(get_db), user=Depends(current_user)):
+def get_supplier(db: Session, supplier_id: int) -> Supplier:
     sup = db.get(Supplier, supplier_id)
     if not sup:
         raise HTTPException(status_code=404, detail="Supplier not found")
+    return sup
+
+
+@router.get("/{supplier_id}/verify-payload")
+def verify_payload(supplier_id: int, db: Session = Depends(get_db)):
+    """The exact string the owner signs to trust this supplier."""
+    sup = get_supplier(db, supplier_id)
+    return {"payload": build_supplier_payload(sup), "already_verified": sup.verified}
+
+
+@router.post("/{supplier_id}/verify")
+def verify_supplier(supplier_id: int, body: SignIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Trusting a supplier lifts the unverified block, so it needs the owner's signature like a policy does."""
+    sup = get_supplier(db, supplier_id)
+    payload = build_supplier_payload(sup)
+    if not user.public_key or not verify_signature(user.public_key, payload, body.signature):
+        raise HTTPException(status_code=400, detail="Signature invalid")
     sup.verified = True
-    audit(db, None, "supplier_verified", {"supplier_id": sup.id, "by": user.email})
+    db.add(SupplierVerification(supplier_id=sup.id, user_id=user.id, payload=payload, signature=body.signature))
+    audit(db, None, "supplier_verified", {"supplier_id": sup.id, "by": user.email, "signed": True})
     db.commit()
     return supplier_dict(sup)
+
+
+def supplier_events(db: Session, supplier_id: int) -> list:
+    rows = (db.query(AuditEvent).filter(AuditEvent.payment_request_id.is_(None), AuditEvent.step.like("supplier_%"))
+            .order_by(AuditEvent.id).all())  # ponytail: filters detail in Python, add an indexed column if the log grows large
+    return [{"step": e.step, "by": e.detail.get("by"), "signed": bool(e.detail.get("signed")), "at": e.created_at.isoformat()}
+            for e in rows if e.detail.get("supplier_id") == supplier_id]
 
 
 @router.get("")
@@ -75,5 +101,6 @@ def supplier_analytics(supplier_id: int, db: Session = Depends(get_db)):
         "paid_max": max(amounts) if amounts else None,
         "last_paid_at": paid[-1][0].created_at.isoformat() if paid else None,
         "flags": dict(flags.most_common()),
+        "events": supplier_events(db, supplier_id),
         "payments": [{"invoice": n, "amount": float(t.amount), "currency": t.currency, "at": t.created_at.isoformat()} for t, n in paid],
     }

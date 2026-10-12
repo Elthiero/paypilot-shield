@@ -9,6 +9,7 @@ export interface Supplier { id: number; name: string; paypal_email: string; veri
 export interface SupplierAnalytics { supplier: { id: number; name: string; verified: boolean; country: string };
   invoices: number; requests: number; decisions: Record<string, number>; paid_count: number; paid_total: number;
   paid_median: number | null; paid_max: number | null; last_paid_at: string | null; flags: Record<string, number>;
+  events: { step: string; by: string | null; signed: boolean; at: string }[];
   payments: { invoice: string; amount: number; currency: string; at: string }[]; }
 
 export interface Invoice { id: number; number: string; supplier: string | null;

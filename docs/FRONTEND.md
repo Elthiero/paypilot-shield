@@ -93,7 +93,7 @@ Auth guard: if `sessionStorage.token` is missing, redirect to `/login`. If any A
 
 ## 5. API reference
 
-Base URL is `VITE_API_URL`, or `${BASE_URL}api` when it is unset (`/api` at the root, `/paypilot/api` under `/paypilot/`). All endpoints except `/health` and `/auth/login` need `Authorization: Bearer <token>`. Errors are FastAPI style `{"detail": "..."}`, so show `detail` to the user.
+Base URL is `VITE_API_URL`, or `${BASE_URL}api` when it is unset (`/api` at the root, `/paypilot/api` under `/paypilot/`). All endpoints except `/health` and `/auth/login` need the login cookie (`credentials: "include"`, plus `X-Requested-With: paypilot` on writes) or `Authorization: Bearer <token>`. Errors are FastAPI style `{"detail": "..."}`, so show `detail` to the user.
 
 ### 5.1 LIVE endpoints
 

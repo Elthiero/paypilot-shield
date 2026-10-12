@@ -82,3 +82,14 @@ def test_login_limiter_blocks_after_five_failures_and_is_stored(client, db):
     assert client.post("/auth/login", json=good).status_code == 429  # blocked even with the right password
     assert db.query(LoginFailure).count() == 5  # in the database, so a restart does not reset it
     assert client.post("/auth/login", json={"email": "other@paypilot.demo", "password": "x"}).status_code == 401  # other email unaffected
+
+
+def test_cookie_login_needs_csrf_header_for_writes(client):
+    r = client.post("/auth/login", json={"email": "owner@paypilot.demo", "password": "test-pass"})
+    assert "httponly" in r.headers["set-cookie"].lower() and "samesite=strict" in r.headers["set-cookie"].lower()
+    assert client.get("/suppliers").status_code == 200  # cookie alone reads
+    body = {"name": "X", "paypal_email": "x@y.co", "country": "US"}
+    assert client.post("/suppliers", json=body).status_code == 403  # cookie alone cannot write
+    assert client.post("/suppliers", json=body, headers={"X-Requested-With": "paypilot"}).status_code == 201
+    client.post("/auth/logout")
+    assert client.get("/suppliers").status_code == 401

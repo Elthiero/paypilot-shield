@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -60,14 +60,24 @@ def create_token(user_id: int) -> str:
     return jwt.encode({"sub": str(user_id), "exp": exp}, settings.jwt_secret, algorithm="HS256")
 
 
+COOKIE = "pp_token"
+CSRF_HEADER = "x-requested-with"  # a cross-site page cannot set this without a CORS preflight, which the allowlist refuses
+
+
 def current_user(
+    request: Request,
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
-    if creds is None:
+    token = creds.credentials if creds else None
+    if token is None and (token := request.cookies.get(COOKIE)):
+        # The browser sent the token on its own, so a forged cross-site request could carry it. Writes must prove origin.
+        if request.method not in ("GET", "HEAD", "OPTIONS") and request.headers.get(CSRF_HEADER) != "paypilot":
+            raise HTTPException(status_code=403, detail="Missing CSRF header")
+    if token is None:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        data = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"])
+        data = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         user = db.get(User, int(data["sub"]))
     except (jwt.PyJWTError, KeyError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")

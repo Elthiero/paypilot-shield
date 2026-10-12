@@ -11,6 +11,7 @@ from sqlalchemy import func, text
 from ..config import settings
 from ..models import AuditEvent, Invoice, Mandate, PaymentRequest, Supplier, Transaction, User
 from .audit import audit
+from .classifier import classify
 from .mandate import build_cart_payload, signed_rules
 from .decision import decide
 from .paypal_client import get_paypal
@@ -198,6 +199,8 @@ def submit_payment_request(db, invoice_number: str, paypal=None, wait: bool = Tr
     audit(db, pr.id, "supplier_history_checked", {"successful_payouts": len(history)})
 
     signals = run_truth_check(db, inv, sup, history)
+    if not signals.blocking:  # a block is final, so skip the model call
+        signals.review.extend(classify(inv, sup, history))  # can only add a review reason
     audit(db, pr.id, "truth_check_done", signals.as_dict())
 
     mandate, _ = active_policy(db)

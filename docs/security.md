@@ -22,6 +22,9 @@ What protects the money, what was hardened in the review of 12 Oct, and what is 
 | Browser headers | nginx sends a Content-Security-Policy (scripts only from this origin, no framing, no plugins, connections only to this origin), `Permissions-Policy`, `Strict-Transport-Security`, `nosniff`, `X-Frame-Options` and `Referrer-Policy`. Styles allow `unsafe-inline` because AG Grid and React inject style rules |
 | Dependencies | `backend/requirements.txt` pins every package with hashes, generated from `requirements.in` (`uv pip compile requirements.in -o requirements.txt --python-version 3.11 --generate-hashes`). CI runs `pip-audit` on it. Tokens use PyJWT (`python-jose` was removed, with unused `passlib`, `alembic`, `requests` and `python-dotenv`) |
 | Password entry | Replacing or creating the signing key asks for the password in a masked in-page field (`PasswordPrompt`), not `window.prompt` |
+| Session | The login token is an `httpOnly`, `SameSite=Strict` cookie (`Secure` over HTTPS), so page scripts and XSS cannot read it. Writes made with the cookie must carry `X-Requested-With: paypilot` (CSRF guard; a cross-site page cannot set it without a CORS preflight the allowlist refuses). `Authorization: Bearer` still works for API clients and tests |
+| Supplier trust | Verifying a supplier needs the owner's ECDSA signature over the exact name, country and PayPal email (`/suppliers/{id}/verify`). The signature is stored in `supplier_verifications` and the audit log, and shows in the supplier's trust history |
+| AI screen | `services/classifier.py` can only add one `review` reason (`ai_suspicious`). It never blocks, never passes, and any failure or non-literal answer is ignored |
 | Container | The backend image runs as a non-root user |
 | Secrets | `.env` is gitignored and was never committed. `.env.example` holds placeholders only |
 
@@ -31,9 +34,9 @@ Tests: `backend/tests/test_security.py`.
 
 ## Known gaps
 
-- The login token is in `sessionStorage`, so an XSS bug would expose it. The CSP makes that harder, it does not remove it.
 - `style-src` allows `unsafe-inline`. Removing it needs nonces for the AG Grid and React styles.
-- Visitors' IPs reach Google through Google Fonts, and with AI mode on, chat text and invoice details go to Groq. Both are disclosed on `/privacy`. Fonts load from Google Fonts. Self-hosting them would let the CSP drop two external hosts.
+- With AI mode on, chat text and invoice details go to Groq. This is disclosed on `/privacy`. Fonts are self-hosted (`@fontsource`), so no visitor IP reaches Google.
+- An XSS bug could still act as the user while the page is open (it cannot steal the cookie). The CSP makes XSS harder.
 - The budget lock is Postgres only. SQLite has a single writer, so dev and tests do not need it.
 - `npm audit` still reports build-time tools (Tailwind 3's dependencies and Vite 5's esbuild dev server). None of them ships to the browser or runs in production. Fixing them means Tailwind 4 and Vite 8, which break the build (tried and reverted on 12 Oct). The runtime advisory in react-router was fixed by moving to v7.
 - All data endpoints are single tenant. Approvals and payments are not scoped to a user, so multi-user roles would need that first.

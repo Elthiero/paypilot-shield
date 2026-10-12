@@ -24,6 +24,17 @@ class Supplier(Base):
     country: Mapped[str] = mapped_column(String(2), default="US")
 
 
+class SupplierVerification(Base):
+    """Owner-signed proof that a supplier was verified. New table, so create_all adds it to an existing database."""
+    __tablename__ = "supplier_verifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    supplier_id: Mapped[int] = mapped_column(ForeignKey("suppliers.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    payload: Mapped[str] = mapped_column(Text)
+    signature: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Invoice(Base):
     __tablename__ = "invoices"
     id: Mapped[int] = mapped_column(primary_key=True)

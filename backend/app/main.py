@@ -28,6 +28,7 @@ app = FastAPI(title="PayPilot Shield", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_credentials=True,  # origins are an explicit list, never "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )

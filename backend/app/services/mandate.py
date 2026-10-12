@@ -26,6 +26,13 @@ def build_cart_payload(mandate_id: int, invoice_number: str, pr, expires_at: str
                       "amount": f"{pr.amount:.2f}", "currency": pr.currency, "request_id": pr.id, "expires_at": expires_at})
 
 
+def build_supplier_payload(sup) -> str:
+    """Deterministic, so the server can rebuild it at verify time. It names the exact supplier data being trusted:
+    if the name, email or country change later, an old signature no longer matches."""
+    return canonical({"type": "supplier_verification", "supplier_id": sup.id, "name": sup.name,
+                      "paypal_email": sup.paypal_email.lower(), "country": sup.country})
+
+
 def verify_signature(public_key_b64: str, payload: str, signature_b64: str) -> bool:
     try:
         pub = serialization.load_der_public_key(base64.b64decode(public_key_b64))

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import DUMMY_HASH, create_token, current_user, login_limiter, verify_password
+from ..config import settings
+from ..deps import COOKIE, DUMMY_HASH, create_token, current_user, login_limiter, verify_password
 from ..models import Mandate, User
 from ..schemas import KeyIn, LoginIn
 from ..services.mandate import is_p256_public_key
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login")
-def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
+def login(body: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
     key = (request.client.host if request.client else "?", body.email.lower())
     if login_limiter.blocked(db, key):
         raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in a few minutes.")
@@ -22,7 +23,17 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
         login_limiter.fail(db, key)
         raise HTTPException(status_code=401, detail="Wrong email or password")
     login_limiter.reset(db, key)
-    return {"token": create_token(user.id), "email": user.email}
+    token = create_token(user.id)
+    # httpOnly: page scripts (so XSS) cannot read it. SameSite=Strict plus the CSRF header guard writes.
+    response.set_cookie(COOKIE, token, max_age=settings.jwt_hours * 3600, httponly=True, samesite="strict",
+                        secure=request.url.scheme == "https", path="/")
+    return {"token": token, "email": user.email}  # token stays in the body for API clients and tests; the web app ignores it
+
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(COOKIE, path="/")
+    return {"ok": True}
 
 
 @router.get("/me")
