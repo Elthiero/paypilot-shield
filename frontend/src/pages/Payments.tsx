@@ -1,6 +1,6 @@
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { BadgeCheck, Hourglass, ShieldX } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
@@ -30,6 +30,24 @@ export default function Payments() {
   const paid = useMemo(() => (txns.data ?? []).filter((t) => t.status === "SUCCESS").reduce((s, t) => s + t.amount, 0), [txns.data]);
   const awaiting = (reqs.data ?? []).filter((r) => r.status === "AWAITING_APPROVAL").length;
   const blocked = (reqs.data ?? []).filter((r) => r.status === "BLOCKED").length;
+
+  // While a payout is PENDING, ask PayPal every 5 seconds. After about 2 minutes stop and leave the Refresh button.
+  const rows = useRef<Transaction[]>([]);
+  rows.current = txns.data ?? [];
+  const polling = rows.current.some((t) => t.status === "PENDING");
+  useEffect(() => {
+    if (!polling) return;
+    let tries = 0;
+    const timer = setInterval(async () => {
+      if (document.hidden) return;
+      if (++tries > 24) return clearInterval(timer);
+      const pending = rows.current.filter((t) => t.status === "PENDING");
+      await Promise.allSettled(pending.map((t) => api(`/transactions/${t.id}/refresh`, { method: "POST", body: {} })));
+      txns.reload();
+      reqs.reload();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [polling]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = async (t: Transaction) => {
     await api(`/transactions/${t.id}/refresh`, { method: "POST", body: {} });
@@ -77,6 +95,7 @@ export default function Payments() {
         ))}
       </div>
       {err && <ErrorState message={err} onRetry={() => { reqs.reload(); txns.reload(); }} />}
+      {polling && <p className="note mb-2">a payout is still pending. checking PayPal every 5 seconds.</p>}
       {tab === "requests"
         ? <OpsGrid rows={reqs.error ? null : reqs.data} cols={reqCols} loading={reqs.loading} empty={{ note: "no payments yet", text: "Ask the agent to pay an invoice to see its decision here." }} />
         : <OpsGrid rows={txns.error ? null : txns.data} cols={txCols} loading={txns.loading} empty={{ note: "no payouts yet", text: "Payouts appear after a payment is sent to PayPal." }} />}

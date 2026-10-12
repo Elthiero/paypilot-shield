@@ -11,11 +11,11 @@ import Spinner from "../components/Spinner";
 import StatusBadge from "../components/StatusBadge";
 import useApi from "../hooks/useApi";
 import { ApiError, api } from "../lib/api";
+import { useHealth } from "../hooks/useHealth";
 import { resetKey } from "../lib/crypto";
 import { money } from "../lib/format";
 import type { Mandate } from "../lib/types";
 
-const DEMO = import.meta.env.DEV || import.meta.env.VITE_DEMO_TOOLS === "1";
 
 function Rules({ m }: { m: Mandate }) {
   const cur = m.rules.currency;
@@ -33,6 +33,7 @@ function Rules({ m }: { m: Mandate }) {
 }
 
 export default function Policy() {
+  const health = useHealth();
   const active = useApi<Mandate | null>("/mandates/active");
   const history = useApi<Mandate[]>("/mandates");
   const [draft, setDraft] = useState<PolicyDraft | null>(null);
@@ -110,7 +111,7 @@ export default function Policy() {
             <summary className="label cursor-pointer">Demo tools</summary>
             <div className="mt-3 flex gap-3 flex-wrap">
               <Button variant="secondary" onClick={reset}>Reset signing key</Button>
-              {DEMO && <Button variant="danger" onClick={tamper} disabled={!m}>Simulate tampering</Button>}
+              {health?.dev_tools && <Button variant="danger" onClick={tamper} disabled={!m}>Simulate tampering</Button>}
             </div>
           </details>
         </div>

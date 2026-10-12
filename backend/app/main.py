@@ -42,4 +42,4 @@ if settings.app_env == "development":  # tamper demo helper, only with APP_ENV=d
 
 @app.get("/health")
 def health():
-    return {"ok": True, "paypal_mode": settings.paypal_mode}
+    return {"ok": True, "paypal_mode": settings.paypal_mode, "dev_tools": settings.app_env == "development"}

@@ -2,6 +2,7 @@ import { CreditCard, FileText, LogOut, MessageSquare, PenLine, ScrollText, Users
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { logout, userEmail } from "../hooks/useAuth";
+import { getHealth } from "../hooks/useHealth";
 import { api } from "../lib/api";
 import type { ApprovalItem, Mandate } from "../lib/types";
 import Banner from "./Banner";
@@ -36,7 +37,7 @@ export default function Shell() {
   }, []);
 
   useEffect(() => {
-    api<{ paypal_mode: string }>("/health").then((h) => setMode(h.paypal_mode)).catch(() => undefined);
+    getHealth().then((h) => setMode(h.paypal_mode)).catch(() => undefined);
     void load();
     const t = setInterval(load, 30000);
     window.addEventListener("paypilot:refresh", load);

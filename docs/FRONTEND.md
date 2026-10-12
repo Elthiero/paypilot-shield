@@ -93,13 +93,13 @@ Auth guard: if `sessionStorage.token` is missing, redirect to `/login`. If any A
 
 ## 5. API reference
 
-Base URL is `VITE_API_URL`. All endpoints except `/health` and `/auth/login` need `Authorization: Bearer <token>`. Errors are FastAPI style `{"detail": "..."}`, so show `detail` to the user.
+Base URL is `VITE_API_URL`, or `${BASE_URL}api` when it is unset (`/api` at the root, `/paypilot/api` under `/paypilot/`). All endpoints except `/health` and `/auth/login` need `Authorization: Bearer <token>`. Errors are FastAPI style `{"detail": "..."}`, so show `detail` to the user.
 
 ### 5.1 LIVE endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/health` | `{ ok: true, paypal_mode: "sandbox" or "fake" }`. Show paypal_mode as a badge in the top bar |
+| GET | `/health` | `{ ok: true, paypal_mode: "sandbox" or "fake", dev_tools: boolean }`. Show paypal_mode as a badge in the top bar. Show the demo tools (Simulate tampering) only when `dev_tools` is true. Use `useHealth()` |
 | POST | `/auth/login` | Body `{ email, password }`. Returns `{ token, email }`. 401 `Wrong email or password`. 429 after 5 failed attempts in 5 minutes for the same client and email |
 | GET | `/auth/me` | Returns `{ id, email }`. Use at app start to validate the token |
 | GET | `/suppliers` | Array of `{ id, name, paypal_email, verified, last_payout_email, country }` |

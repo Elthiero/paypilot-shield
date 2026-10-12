@@ -42,4 +42,5 @@ def test_agent_pays_inv001_and_explains_inv005(client):
 
 
 def test_health(client):
-    assert client.get("/health").json()["paypal_mode"] == "fake"
+    h = client.get("/health").json()
+    assert h["paypal_mode"] == "fake" and h["dev_tools"] is True  # the test env is APP_ENV=development

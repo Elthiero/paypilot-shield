@@ -113,7 +113,7 @@ Set this in `.github/CODEOWNERS`:
 
 **Alain (frontend)**
 - [x] Wire every screen to real endpoints, remove unused mocks
-- [ ] Base path support (`VITE_BASE=/paypilot/`, router basename) and test at `/paypilot/approvals` deep link
+- [x] Base path support (`VITE_BASE=/paypilot/`, router basename, API follows the base) and test at `/paypilot/approvals` deep link (see `docs/layer4.md`)
 - [ ] All four states on every page, keyboard path, reduced motion
 - [x] Tamper banner and the Demo tools card
 - [ ] Production build served by nginx from `/var/www/paypilot`
