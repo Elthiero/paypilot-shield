@@ -70,7 +70,7 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/layer1.md](docs
 | Layer 1, core (login, invoices, pipeline, agent, real sandbox payout, audit log) | Done |
 | Layer 2, trust (owner-signed policy, signed approvals, verifier, tamper test) | Done |
 | Layer 3, detection (extra fraud signals and an AI screen that can only raise risk) | Done |
-| Layer 4, presentation (UI, AG Grid, replay page) | Built, tested in Docker (including the `/paypilot/` base path) and live at https://paypilot.donambi.dev. Final polish pass still open |
+| Layer 4, presentation (UI, AG Grid, replay page) | Built, tested in Docker (including the `/paypilot/` base path) and live at https://paypilot.donambi.dev. Polish done: keyboard access, loading and error states, e2e tests |
 
 ## Screenshots
 
@@ -171,11 +171,12 @@ Never commit `.env`. It is in `.gitignore`.
 
 | Method and path | Purpose |
 |---|---|
-| `POST /auth/login` | Returns a JWT. 429 after 5 failed attempts in 5 minutes |
+| `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` | Login sets an httpOnly, SameSite=Strict cookie (the JWT is not readable by page scripts). 429 after 5 failed attempts in 5 minutes |
 | `POST /auth/register-key` | Stores the browser's public key. Replacing an existing key needs the password |
 | `/mandates/...`, `/approvals/...` | Signed policy and signed approvals, see [docs/layer2.md](docs/layer2.md) |
 | `GET /invoices`, `GET /invoices/{number}` | Invoice data |
-| `GET /suppliers` | Supplier data |
+| `GET /suppliers`, `POST /suppliers` | List suppliers, add one (starts unverified) |
+| `GET /suppliers/{id}/verify-payload`, `POST /suppliers/{id}/verify`, `GET /suppliers/{id}/analytics` | Owner-signed supplier verification, its trust history, payment analytics |
 | `POST /agent/chat` | Talk to the agent |
 | `POST /payments`, `GET /payments`, `GET /payments/{id}`, `GET /payments/{id}/trace` | Request a payment, list requests, one request, its audit steps with timestamps. Every `reasons` item is `{ code, level, message }` |
 | `GET /transactions`, `POST /transactions/{id}/refresh` | Payout records and status refresh |
@@ -189,7 +190,17 @@ cd backend
 pytest -q
 ```
 
-The suite uses the fake PayPal client and a temporary SQLite database, so it needs no credentials and never calls PayPal. It covers the five demo invoices, idempotency (no double payment), the audit trace, the API and the agent loop, the signed policy and approvals (Layer 2), the fraud signals (Layer 3) and the security hardening ([docs/security.md](docs/security.md)).
+The suite uses the fake PayPal client and a temporary SQLite database, so it needs no credentials and never calls PayPal. It covers the five demo invoices, signed supplier verification, idempotency (no double payment), the audit trace, the API and the agent loop, the signed policy and approvals (Layer 2), the fraud signals (Layer 3) and the security hardening ([docs/security.md](docs/security.md)).
+
+### End-to-end tests
+
+```bash
+cd frontend
+npm ci && npx playwright install chromium
+E2E_PYTHON=../backend/venv/bin/python npm run e2e   # starts its own backend (fake PayPal, SQLite) and Vite
+```
+
+Covers the demo flow, signing, loading, empty and error states, and keyboard access to grid rows. CI runs the same job.
 
 ## Deployment
 
@@ -224,7 +235,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 - Sandbox only. Real payouts require PayPal production approval, and payout availability depends on the countries involved. During development, sandbox accounts in Rwanda were denied for Payouts, while United States sandbox accounts worked.
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
-- Suppliers and their verified flag come from `backend/seed.py`. There is no screen to add or verify a supplier yet (new invoices can be added in the app, for existing suppliers).
+- Suppliers can be added and verified in the app (the owner signs the verification in the browser). Only the demo suppliers come from `backend/seed.py`.
 - Payment status can lag: a sandbox payout stays pending for about 35 seconds. The PayPal webhook, the Payments page poll and the Refresh button settle it.
 - Planned: LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
 - Known security gaps are listed in [docs/security.md](docs/security.md).
@@ -239,7 +250,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 
 ## Contributing
 
-Work happens on short-lived branches and pull requests into `main`. Each pull request needs a green `ci` run and a review from the other team member. Run `pytest -q` in `backend/` and `npm run build` in `frontend/` before opening one. Never commit `.env`, and add every new environment variable to `.env.example` in the same pull request.
+Work happens on short-lived branches and pull requests into `main`. Each pull request needs a green `ci` run and a review from the other team member. Run `pytest -q` in `backend/`, and `npx tsc --noEmit`, `npm run build` and `npm run e2e` in `frontend/` before opening one. Never commit `.env`, and add every new environment variable to `.env.example` in the same pull request.
 
 ## License
 
