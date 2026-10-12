@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Banner from "../components/Banner";
 import Button from "../components/Button";
 import { login } from "../hooks/useAuth";
@@ -51,6 +51,7 @@ export default function Login() {
             </div>
           ))}
           <p className="note">Sandbox demo. No real money moves.</p>
+          <Link to="/privacy" className="label underline">Privacy and terms</Link>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { CreditCard, FileText, LogOut, MessageSquare, PenLine, ScrollText, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { logout, userEmail } from "../hooks/useAuth";
 import { getHealth } from "../hooks/useHealth";
 import { api } from "../lib/api";
@@ -88,6 +88,7 @@ export default function Shell() {
           </div>
         )}
         <main className="page-in"><Outlet /></main>
+        <footer className="mt-10 pb-6"><Link to="/privacy" className="label underline">Privacy and terms</Link></footer>
       </div>
     </div>
   );
