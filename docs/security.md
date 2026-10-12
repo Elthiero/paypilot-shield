@@ -33,7 +33,7 @@ Tests: `backend/tests/test_security.py`.
 - `style-src` allows `unsafe-inline`. Removing it needs nonces for the AG Grid and React styles.
 - Fonts load from Google Fonts. Self-hosting them would let the CSP drop two external hosts.
 - The budget lock is Postgres only. SQLite has a single writer, so dev and tests do not need it.
-- The pinned file covers Python only. Run `npm audit` for the frontend.
+- `npm audit` still reports build-time tools (Tailwind 3's dependencies and Vite 5's esbuild dev server). None of them ships to the browser or runs in production. Fixing them means Tailwind 4 and Vite 8, which break the build (tried and reverted on 12 Oct). The runtime advisory in react-router was fixed by moving to v7.
 - All data endpoints are single tenant. Approvals and payments are not scoped to a user, so multi-user roles would need that first.
 - The PayPal webhook is not built. When it is: verify PayPal's signature before trusting the body, and make the handler idempotent.
 - Behind a second proxy (host nginx with TLS): `frontend/nginx.conf` trusts `X-Forwarded-For` from the compose subnet `172.28.0.0/24` only. The host nginx must send `proxy_set_header X-Forwarded-For $remote_addr;`. Check the subnet with `docker network inspect` and adjust `set_real_ip_from` if it differs.
