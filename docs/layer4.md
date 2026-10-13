@@ -21,7 +21,7 @@ A pink banner shows on every page while the active policy fails verification, a 
 ## How it talks to the backend
 
 - `src/lib/api.ts` calls `${BASE_URL}api` (so `/api` at the root and `/paypilot/api` under `/paypilot/`), unless `VITE_API_URL` is set. In Docker, nginx proxies `/api` to the backend.
-- The login token is kept in `sessionStorage`. A 401 sends the user back to the login page.
+- The login token is an httpOnly, SameSite=Strict cookie that scripts cannot read, so every request sends `credentials: "include"` and writes carry `X-Requested-With: paypilot`. Only the email is kept in `sessionStorage`, as a hint for what to render. A 401 sends the user back to the login page.
 - `src/lib/crypto.ts` creates a non-extractable ECDSA P-256 key in IndexedDB. The server builds the string to sign and the browser signs it unchanged. Replacing a key the server already knows needs the password.
 - `src/hooks/useHealth.ts` reads `/health` once per page load. It gives the PayPal mode chip in the header (`paypal_mode`) and decides whether the demo tools are shown (`dev_tools`).
 
@@ -69,7 +69,7 @@ Backend tests cover the matcher, status filter, "pay all pending" and `/health` 
 
 ## Known gaps
 
-- No automated frontend tests and no browser tests in CI. The Playwright script above is manual.
+- The checks listed under "Verified on 12 Oct" were a manual script. The demo path and the states below are now automated in `frontend/e2e` and run in CI.
 - Loading, empty and error states come from the shared `OpsGrid`, `Spinner`, `EmptyState` and `ErrorState`. `frontend/e2e/states.spec.ts` checks loading, empty and error-with-retry on Approvals, Payments, Invoices, Suppliers and Policy, a keyboard path into a grid row (Enter opens it, Escape closes it), and that reduced motion switches animations off. Replay and the chat are not covered by it.
-- Suppliers still come from `seed.py`. Invoices can be added from the UI (`POST /invoices`), but only for an existing supplier.
+- Suppliers can be added and verified in the app. Only the demo suppliers come from `seed.py`. Invoices can be added from the UI (`POST /invoices`), but only for an existing supplier.
 - The 1024 px check was done on 12 Oct in headless Chromium: no page or overlay scrolls sideways, the console is clean, and the AG Grid tables scroll inside their card. Below 1100 px the top bar shows icons only (with labels for screen readers and tooltips). Not checked: widths below 1024 px and touch devices. The final visual polish pass is still open.

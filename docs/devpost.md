@@ -85,7 +85,7 @@ Live demo: https://paypilot.donambi.dev (PayPal sandbox, no real money).
 Suggested path (about 3 minutes):
 
 1. Sign in. On the first sign-in from a browser, a new signing key is created for that browser, so the previous policy is shown as "signature invalid".
-2. **Policy:** type "Auto pay up to 500, budget 5000 a month", press Review and sign, then Sign policy.
+2. **Policy:** check the auto limit is 500 and the monthly budget 5000, press Review and sign, then Sign policy.
 3. **Agent:** ask "Pay INV-002". It should be AUTO_PAY and a sandbox payout is sent. It shows as sent and turns to paid when PayPal's webhook arrives, usually within a minute.
 4. **Agent:** ask "Pay INV-003". It needs approval. Open **Approvals**, review and sign. The payout is sent.
 5. **Agent:** ask "Pay INV-005". It is blocked, because the payee email changed and the invoice text contains instructions. Open **Payments** and press **Replay** to see each step.

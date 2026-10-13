@@ -6,7 +6,7 @@ The rules: under 3 minutes, public on YouTube, shows the project working, no thi
 
 1. On the server run `docker compose exec backend python seed.py`. It wipes the data and resets the five demo invoices. Do it right before recording, not before rehearsals.
 2. Open the live site in a fresh Chrome window at 1920x1080 (or 1440x900), zoom 110%. Hide the bookmarks bar and extensions. Turn off autofill suggestions and notifications.
-3. The policy box starts with default text. Select all (Ctrl+A) before typing the demo policy, or the new text lands in the middle of it.
+3. The policy form starts with an auto limit of 500 and a monthly budget of 5000, which is what the demo needs. The "Policy in plain words" box is only a note stored with the policy, it does not set the limits.
 4. Sign in once. The policy is empty after a re-seed, so the first thing on camera is signing it.
 5. Rehearse twice with `Pay INV-002`, `Pay INV-003` and `Pay INV-005`, then re-seed again before the real take. Each invoice can only be paid once.
 6. Do not show the PayPal dashboard or logo. Show the app's own Payments and Replay pages, which prove the same thing.
@@ -19,7 +19,7 @@ The AI replies take about 5 to 15 seconds (Groq, three tool calls). Talk through
 | Time | Show | Say |
 |------|------|-----|
 | 0:00 to 0:15 | Login page, then sign in | Invoice fraud costs businesses billions. If an AI agent pays your invoices, how do you stop it being tricked? This is PayPilot Shield, running on the PayPal sandbox. |
-| 0:15 to 0:40 | **Policy**: type "Auto pay up to 500, budget 5000 a month", Review and sign, Sign policy | The owner states the rules in plain English, and signs them in the browser. The key never leaves the browser, and nothing is paid without this signature. |
+| 0:15 to 0:40 | **Policy**: check the auto limit is 500 and the monthly budget 5000, Review and sign, Sign policy | The owner sets the rules and signs them in the browser. The key never leaves the browser, and nothing is paid without this signature. |
 | 0:40 to 1:10 | **Agent**: "Pay INV-002". Show the decision card: AUTO_PAY, low risk | The agent can only ask for a payment. A rules engine decides, not the AI. This one is inside the policy and every check passed, so a payout goes to PayPal. |
 | 1:10 to 1:25 | **Payments**: the payout shows sent, then paid | PayPal confirms it with a signed webhook, and we read the status back from PayPal before we trust it. |
 | 1:25 to 1:55 | **Agent**: "Pay INV-003" (needs approval). Go to **Approvals**, Review and sign | $1,500 is above the auto limit. A human signs the exact payment. The signature is checked again just before PayPal is called. |

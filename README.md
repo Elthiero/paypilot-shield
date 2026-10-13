@@ -139,7 +139,7 @@ npm run dev                                 # http://localhost:5173
 
 ### 6. Try it
 
-Log in at `/docs` with `DEMO_EMAIL` and `DEMO_PASSWORD`, click **Authorize**, then call `POST /agent/chat`:
+Open <http://localhost:5173> and sign in with `DEMO_EMAIL` and `DEMO_PASSWORD` to use the web app (Vite proxies `/api` to the backend on port 8000). Or call the API directly: log in at `/docs` with `DEMO_EMAIL` and `DEMO_PASSWORD`, click **Authorize**, then call `POST /agent/chat`:
 
 ```json
 {"message": "Pay INV-001"}
@@ -163,7 +163,10 @@ Nothing is paid until the owner has signed a policy. In the web app open **Polic
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Sandbox app credentials |
 | `LLM_API_KEY`, `LLM_MODEL` | Optional. Without them a rule based matcher handles chat |
 | `LLM_BASE_URL` | Optional. Set it to use an OpenAI compatible provider (Groq `https://api.groq.com/openai/v1`, xAI `https://api.x.ai/v1`). Empty means Anthropic. The live demo uses Groq |
+| `PAYPAL_BASE_URL`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_SENDER_NOTE` | PayPal API host (sandbox by default), the webhook id that `POST /webhooks/paypal` verifies against (without it the webhook rejects everything), and the note on each payout |
 | `CORS_ORIGINS` | Allowed frontend origins |
+| `FRONTEND_PORT` | Docker only. Host port for the frontend container (default 8080) |
+| `VITE_BASE` | Docker build only. Path the app is served under (default `/`, the live site). `/paypilot/` is supported but not used in production |
 
 Never commit `.env`. It is in `.gitignore`.
 
@@ -216,7 +219,7 @@ docker compose exec backend python seed.py   # first run only, loads suppliers, 
 
 Two services: `backend` (FastAPI, not published, uses the `DATABASE_URL` from `.env`) and `frontend` (nginx serving the built app and proxying `/api` to the backend). With `APP_ENV=development` in `.env` it runs with the `/dev` helpers on and weak secrets allowed. Without it, set a real `JWT_SECRET` and `DEMO_PASSWORD` or the backend refuses to start. For the `/paypilot/` path on the VPS build with `VITE_BASE=/paypilot/ docker compose build frontend` and strip the prefix in the host nginx (see [docs/layer4.md](docs/layer4.md)). The "Simulate tampering" demo button shows automatically when the backend runs with `APP_ENV=development`. Inside the container `localhost` is the container itself, so for a Postgres on the same machine use `DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/paypilot`. Signing needs HTTPS or `localhost`. `seed.py` wipes all data, so do not run it on data you want to keep.
 
-The target is a VPS behind nginx (see `docs/PLAN.md`). On any public server leave `APP_ENV` at its default (`production`): the API then refuses to start unless `JWT_SECRET` has at least 32 random characters and `DEMO_PASSWORD` at least 12, and the `/dev` tamper helpers are not mounted. Set `APP_ENV=development` only on your own machine. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
+The live site is a VPS with a host nginx (TLS) in front of this compose stack (see [docs/security.md](docs/security.md) for the proxy headers). On any public server leave `APP_ENV` at its default (`production`): the API then refuses to start unless `JWT_SECRET` has at least 32 random characters and `DEMO_PASSWORD` at least 12, and the `/dev` tamper helpers are not mounted. Set `APP_ENV=development` only on your own machine. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
 
 ## Project structure
 
@@ -225,6 +228,7 @@ backend/app/        FastAPI app, models, routers, services (pipeline, decision, 
 backend/tests/      Pipeline, API, agent, signature, truth check and security tests
 backend/Dockerfile  Backend image (non-root)
 frontend/src/       Pages, components, API client, WebCrypto signing
+frontend/e2e/         Playwright tests (demo path, states, keyboard)
 frontend/Dockerfile, frontend/nginx.conf   Frontend image: built app plus the /api proxy
 docker-compose.yml  Backend and frontend services
 docs/               Architecture, layer notes, security, API contract, design, demo script, dev log
@@ -237,7 +241,7 @@ scripts/            Database setup SQL and PayPal sandbox test
 - Signed policies are an AP2-inspired simplification: the owner's browser signs a server-built payload with a non-extractable ECDSA key.
 - Suppliers can be added and verified in the app (the owner signs the verification in the browser). Only the demo suppliers come from `backend/seed.py`.
 - Payment status can lag: a sandbox payout stays pending for about 35 seconds. The PayPal webhook, the Payments page poll and the Refresh button settle it.
-- Planned: LLM fraud classifier, fraud thresholds inside the signed policy, dispute handling, multi-user roles.
+- Planned: fraud thresholds inside the signed policy, LLM drafting of the policy, dispute handling, multi-user roles. (The AI screen that can only raise risk is already built, see [docs/layer3.md](docs/layer3.md).)
 - Known security gaps are listed in [docs/security.md](docs/security.md).
 - Data sharing: with AI mode on, chat messages and the invoice details the agent looks up go to the LLM provider (Groq on the live demo). Payout requests go to the PayPal sandbox. The `/privacy` page says this in plain words.
 

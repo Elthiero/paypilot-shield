@@ -27,7 +27,7 @@ Golden rule the UI must make visible: the AI proposes, deterministic code decide
 | Tables | AG Grid Community (`ag-grid-react`) |
 | Styling | Tailwind CSS v3. Design tokens come from DESIGN.md and live in `tailwind.config.ts` |
 | Signing | WebCrypto, ECDSA P-256, non-extractable key stored in IndexedDB via `idb-keyval` |
-| Auth | JWT from `/auth/login`, kept in `sessionStorage` under `token` |
+| Auth | JWT from `/auth/login`, kept in an httpOnly cookie. Only the email is kept in `sessionStorage`, as a hint for what to render |
 | Server state | Plain `fetch` through `src/lib/api.ts`, with small hooks. No Redux |
 
 Rules:
@@ -40,12 +40,13 @@ Rules:
 
 ### Environment variables
 
-| Variable | Dev | Production (VPS) |
+| Variable | Default | Meaning |
 |---|---|---|
-| `VITE_API_URL` | `http://localhost:8000` | `/paypilot/api` |
-| `VITE_BASE` | `/` | `/paypilot/` |
+| `VITE_BASE` | `/` | Path the app is served under. The live site uses `/`. Use `/paypilot/` only when the app lives under that path (see [layer4.md](layer4.md)) |
+| `VITE_API_URL` | unset | Overrides the API base. When unset the client calls `${BASE_URL}api` (`/api` at the root, `/paypilot/api` under `/paypilot/`) |
+| `VITE_API_TARGET` | `http://localhost:8000` | Dev server only: where Vite proxies `/api` |
 
-In `vite.config.ts` set `base: process.env.VITE_BASE || "/"`. In `main.tsx` use `<BrowserRouter basename={import.meta.env.BASE_URL}>`. This keeps local dev (served at `/`) and the VPS (served at `/paypilot/`) both working.
+`vite.config.ts` uses `base: process.env.VITE_BASE || "/"` and proxies `/api` to the backend in dev. `main.tsx` uses `<BrowserRouter basename={import.meta.env.BASE_URL}>`. In Docker, nginx proxies `/api` to the backend.
 
 ## 3. File layout
 
@@ -89,7 +90,7 @@ All page and component files exist today as 3 line placeholders, so fill them in
 | `/suppliers` | Suppliers | required |
 | `/replay/:id` | Replay (id is a payment request id) | required |
 
-Auth guard: if `sessionStorage.token` is missing, redirect to `/login`. If any API call returns 401, clear the token and redirect to `/login` with a "Session expired" message.
+Auth guard: if the email hint in `sessionStorage` is missing, redirect to `/login`. If any API call returns 401, clear the hint and redirect to `/login` with a "Session expired" message. The cookie itself is httpOnly, so scripts cannot read it.
 
 ## 5. API reference
 
@@ -236,7 +237,7 @@ For every screen: layout and look come from DESIGN.md. Below is behavior, data, 
 
 ### 7.1 Login (`/login`)
 - Form: email, password, submit. Prefill nothing in production. In development a hint line can show the demo email.
-- On submit call `POST /auth/login`. Store `token` in `sessionStorage`. After success, call `registerKey(password)` (it sends the public key to `POST /auth/register-key`; the same key again is a no-op). The password is only needed when this browser's key differs from the one the server has.
+- On submit call `POST /auth/login`. The server sets the httpOnly cookie, so nothing secret is stored. Keep the email in `sessionStorage`. After success, call `registerKey(password)` (it sends the public key to `POST /auth/register-key`; the same key again is a no-op). The password is only needed when this browser's key differs from the one the server has.
 - States: submitting (disable button), error (show `detail`).
 - Accept: wrong password shows "Wrong email or password"; success lands on `/`.
 
@@ -327,7 +328,8 @@ Notes for the implementer:
 
 The current helper throws `Error("401 {...}")`. Replace with:
 - An `ApiError` class holding `status` and `detail` (parse `{ detail }` from the body).
-- A 401 handler: clear `sessionStorage.token` and navigate to `/login`.
+- A 401 handler: clear the `sessionStorage` email hint and navigate to `/login`.
+- `credentials: "include"` and an `X-Requested-With: paypilot` header on every request (the CSRF guard for writes).
 - A typed signature: `api<T>(path, options): Promise<T>`.
 - `Content-Type: application/json` only when a body exists.
 
@@ -335,7 +337,7 @@ The current helper throws `Error("401 {...}")`. Replace with:
 
 - **StatusBadge**: one component for decisions, risk, invoice status and transaction status. Maps value to color token from DESIGN.md, with unknown values falling back to neutral. Always pairs color with text (never color alone).
 - **OpsGrid**: wraps AG Grid with the shared theme, default column behavior (sortable, resizable), a "no rows" overlay, and a loading overlay. Import AG Grid CSS once in `main.tsx`.
-- **Shell**: sidebar with the eight destinations, top bar with the `paypal_mode` badge ("Sandbox" or "Fake"), the user email and a Sign out button. A pending approvals count badge on the Approvals link (poll `/approvals` every 30 seconds).
+- **Shell**: top navigation bar (no sidebar) with the destinations, top bar with the `paypal_mode` badge ("Sandbox" or "Fake"), the user email and a Sign out button. A pending approvals count badge on the Approvals link (poll `/approvals` every 30 seconds).
 
 ## 11. Accessibility and quality bar
 
@@ -350,9 +352,9 @@ The current helper throws `Error("401 {...}")`. Replace with:
 1. Foundation: Tailwind, `api.ts` with ApiError, `types.ts`, Shell, auth guard, Login. (Day 1)
 2. Read only screens on LIVE endpoints: Invoices, Suppliers, Payments (both tabs), Replay. (Days 2 to 3)
 3. Agent chat with the trace side panel. (Day 3)
-4. Layer 2 UI against mock data: Policy and Approvals with `crypto.ts`. Swap mocks for the real endpoints when the backend lands, before the 24 Oct gate.
+4. Layer 2 UI: Policy and Approvals with `crypto.ts`, on the real endpoints.
 5. Polish pass using DESIGN.md: empty and error states, responsive checks, demo data path.
-6. Feature freeze on 3 Nov: only bug fixes after that.
+6. Feature freeze: only bug fixes after that.
 
 Suggested split: Alain takes steps 1, 2 and 5. Elthiero takes the Layer 2 backend and steps 3 and 4. The contracts above are live, so both sides can work in parallel.
 
@@ -362,16 +364,14 @@ Suggested split: Alain takes steps 1, 2 and 5. Elthiero takes the Layer 2 backen
 
 ## 14. Acceptance checklist
 
-- [ ] All eight routes render with loading, empty, error and data states.
-- [ ] Token expiry sends the user to `/login`.
-- [ ] No page calls `fetch` directly.
-- [ ] Signing works on `localhost` and on HTTPS, and shows a clear message on plain HTTP.
-- [ ] The base path works at `/` and at `/paypilot/` with deep links such as `/paypilot/approvals`.
-- [ ] `npm run build` passes (CI runs it).
-- [ ] The demo path in section 13 runs without console errors.
+- [x] All routes render with loading, empty, error and data states (`frontend/e2e/states.spec.ts`).
+- [x] Token expiry sends the user to `/login`.
+- [x] No page calls `fetch` directly.
+- [x] Signing works on `localhost` and on HTTPS, and shows a clear message on plain HTTP.
+- [x] The base path works at `/` and at `/paypilot/` with deep links such as `/paypilot/approvals`.
+- [x] `npm run build` passes (CI runs it).
+- [x] The demo path in section 13 runs without console errors.
 
 ## 15. Open items
 
-- DESIGN.md (visual language) is written after the reference images are provided.
 - `POST /mandates/draft` (plain language policy drafting) is not built.
-- Decide whether `/mandates/draft` uses the LLM or a rule parser first (the LLM is optional, the rule parser is the fallback).
