@@ -1,5 +1,5 @@
 # Direct dependencies. requirements.txt is generated from this file and pins every version:
-#   uv pip compile requirements.in -o requirements.txt --python-version 3.11 --generate-hashes
+#   uv pip compile requirements.in -o requirements.txt --python-version 3.11
 fastapi
 uvicorn[standard]
 sqlalchemy>=2.0
