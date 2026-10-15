@@ -1,15 +1,34 @@
 # docker compose up --build   then open http://localhost:8080
 # First run only:             docker compose exec backend python seed.py
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: paypilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paypilot}
+      POSTGRES_DB: paypilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "paypilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   backend:
     build: ./backend
-    env_file:
-      - path: .env
-        required: false
+    env_file: .env  # copy .env.example to .env first
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
+      # Bundled Postgres by default. For your own Postgres set DOCKER_DATABASE_URL in .env
+      # (DATABASE_URL there is for running the backend outside Docker).
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://paypilot:${POSTGRES_PASSWORD:-paypilot}@db:5432/paypilot}
       FORWARDED_ALLOW_IPS: 172.28.0.0/24  # trust X-Forwarded-For only from containers on this network (nginx)
-    # DATABASE_URL comes from .env. From inside the container "localhost" is the container itself,
-    # so for a Postgres on this machine use host.docker.internal.
+    # Inside the container "localhost" is the container itself: for a Postgres on this machine
+    # use host.docker.internal in DOCKER_DATABASE_URL (works on Linux, Windows and macOS).
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -36,3 +55,6 @@ networks:
     ipam:
       config:
         - subnet: 172.28.0.0/24
+
+volumes:
+  pgdata:
