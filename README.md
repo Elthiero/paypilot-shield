@@ -4,7 +4,19 @@
 
 **An AI agent that pays supplier invoices through PayPal Payouts, but only inside a spending policy the owner has signed, and only after the invoice passes a truth check. Every decision is written to an audit log you can replay.**
 
-Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). Live demo (PayPal sandbox): https://paypilot.donambi.dev. Privacy and terms: [/privacy](https://paypilot.donambi.dev/privacy).
+Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). Live demo (PayPal sandbox): https://paypilot.donambi.dev. Demo video (2:47): https://youtu.be/rzRGXtTX43g. Privacy and terms: [/privacy](https://paypilot.donambi.dev/privacy).
+
+## Try the live demo
+
+1. Open https://paypilot.donambi.dev and sign in. The demo login is in the Devpost testing instructions.
+2. Nothing is paid until the owner has signed a policy. Open **Policy**, set the auto limit to 500 and the monthly budget to 5,000, then **Review and sign**. Signing creates a key in your browser.
+3. Open the agent chat and try the five demo invoices (see the table below):
+   - `Pay INV-001` is paid automatically (`AUTO_PAY`).
+   - `Pay INV-003` is over the limit, so it waits on the **Approvals** page, where you sign the exact payment (`NEEDS_APPROVAL`).
+   - `Pay INV-005` is blocked because the payee email changed and the invoice hides instructions (`BLOCKED`). Ask `Why INV-005?` for the reasons.
+4. Open **Payments** to see each outcome and the replay of every audit step.
+
+Everything runs against the PayPal sandbox, so no real money moves. An invoice can only be paid once. If INV-001 already shows as paid, the live demo has been used before, so run the project locally with the Docker quick start below for a fresh state.
 
 ## The problem
 
@@ -84,6 +96,8 @@ Taken on a local run with the fake PayPal stand-in (see `docs/screenshots/` for 
 ## Quick start (local)
 
 **Requirements:** Python 3.11+, Node.js 20+, PostgreSQL 14+. A PayPal developer account is needed for real sandbox payouts; without one set `PAYPAL_MODE=fake` in `.env` and skip step 3 (the fake client never calls PayPal).
+
+To skip the manual setup, use the [Docker Compose](#docker-compose) steps in the Deployment section instead. They bring up the database, backend and frontend with one command.
 
 ### 1. Database
 
@@ -255,7 +269,7 @@ Three services:
 
 - `db`: bundled Postgres 16, data in the `pgdata` volume, not published.
 - `backend`: FastAPI, not published. It uses the bundled `db` unless `DOCKER_DATABASE_URL` is set in `.env` (`DATABASE_URL` is only for running outside Docker).
-- `frontend`: nginx serving the built app and proxying `/api` to the backend.
+- `frontend`: nginx serving the built app and proxying `/api` to the backend. It is published on `127.0.0.1` only, so a host nginx or a browser on the same machine can reach it, but other machines cannot.
 
 Notes:
 
@@ -269,6 +283,22 @@ Notes:
 
 The live site is a VPS with a host nginx (TLS) in front of this compose stack, which listens on host port 18001 (`FRONTEND_PORT`; see [docs/security.md](docs/security.md) for the proxy headers). On any public server leave `APP_ENV` at its default (`production`): the API then refuses to start unless `JWT_SECRET` has at least 32 random characters and `DEMO_PASSWORD` at least 12, and the `/dev` tamper helpers are not mounted. Set `APP_ENV=development` only on your own machine. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the tests on every push and pull request.
 
+### Updating the live site
+
+Change tracked files on your own machine, push to `main`, then run the deploy script on the server:
+
+```bash
+bash scripts/deploy.sh
+```
+
+The script does a hard pull of `origin/main`, prints a warning for any variable in `.env.example` that is missing from the server `.env`, rebuilds with Docker Compose and removes old images. Tracked files are reset to `origin/main`, so never edit them on the server. Server only settings (secrets, `FRONTEND_PORT`) belong in `.env`, which is not tracked and is never overwritten.
+
+To reset the demo data on a running server, run `docker compose exec backend python seed.py`. It wipes all data and reloads the suppliers, the five demo invoices and the owner account, so sign the policy again afterwards.
+
+### Dependency updates
+
+`backend/requirements.txt` is compiled with `uv`. Run `./scripts/update-deps.sh` to regenerate it, or `./scripts/update-deps.sh --upgrade-package <name>` to bump one package. CI runs `pip-audit` on every push as an advisory step, and the weekly `dependency-audit` workflow ([audit.yml](.github/workflows/audit.yml)) fails when a known vulnerability appears in the lockfile.
+
 ## Project structure
 
 ```
@@ -278,9 +308,10 @@ backend/Dockerfile  Backend image (non-root)
 frontend/src/       Pages, components, API client, WebCrypto signing
 frontend/e2e/         Playwright tests (demo path, states, keyboard)
 frontend/Dockerfile, frontend/nginx.conf   Frontend image: built app plus the /api proxy
-docker-compose.yml  Backend and frontend services
-docs/               Architecture, layer notes, security, API contract, design, demo script, dev log
-scripts/            Database setup SQL and PayPal sandbox test
+docker-compose.yml  Database, backend and frontend services
+docs/               Architecture, layer notes, security, API contract, design, dev log
+scripts/            Database setup SQL, PayPal sandbox test, policy signing helper, deploy and dependency update scripts
+.github/workflows/  CI (tests, type check, build, e2e) and the weekly dependency audit
 ```
 
 ## Limitations and roadmap
