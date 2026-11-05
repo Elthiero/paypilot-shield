@@ -1,34 +1,41 @@
 # docker compose up --build   then open http://localhost:8080
 # First run only:             docker compose exec backend python seed.py
+#
+# DATABASE NOTE:
+# The bundled Postgres ("db" service) is disabled below because this deployment uses an
+# external database. The backend reads DATABASE_URL from .env (via env_file).
+# To go back to the bundled Postgres, uncomment every block marked [BUNDLED DB].
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: paypilot
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paypilot}
-      POSTGRES_DB: paypilot
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "paypilot"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    restart: unless-stopped
+  # [BUNDLED DB] Local Postgres container, not used when DATABASE_URL points to an external DB.
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: paypilot
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paypilot}
+  #     POSTGRES_DB: paypilot
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "paypilot"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+  #   restart: unless-stopped
 
   backend:
     build: ./backend
-    env_file: .env  # copy .env.example to .env first
-    depends_on:
-      db:
-        condition: service_healthy
+    env_file: .env  # copy .env.example to .env first. DATABASE_URL comes from here.
+    # [BUNDLED DB] Wait for the bundled Postgres to be healthy before starting the backend.
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
     environment:
-      # Bundled Postgres by default. For your own Postgres set DOCKER_DATABASE_URL in .env
-      # (DATABASE_URL there is for running the backend outside Docker).
-      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://paypilot:${POSTGRES_PASSWORD:-paypilot}@db:5432/paypilot}
+      # [BUNDLED DB] This line overrides DATABASE_URL from .env and points to the "db" container.
+      # Keep it commented out so the external DATABASE_URL from .env is used.
+      # DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://paypilot:${POSTGRES_PASSWORD:-paypilot}@db:5432/paypilot}
       FORWARDED_ALLOW_IPS: 172.30.0.0/16  # trust X-Forwarded-For only from containers on this network (nginx)
     # Inside the container "localhost" is the container itself: for a Postgres on this machine
-    # use host.docker.internal in DOCKER_DATABASE_URL (works on Linux, Windows and macOS).
+    # use host.docker.internal in DATABASE_URL (works on Linux, Windows and macOS).
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -57,5 +64,6 @@ networks:
       config:
         - subnet: 172.30.0.0/16
 
-volumes:
-  pgdata:
+# [BUNDLED DB] Named volume that stored the bundled Postgres data.
+# volumes:
+#   pgdata:
