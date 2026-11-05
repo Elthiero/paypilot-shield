@@ -331,7 +331,7 @@ scripts/            Database setup SQL, PayPal sandbox test, policy signing help
 | Name | GitHub | Contact |
 |---|---|---|
 | Thierry Donambi | [@Elthiero](https://github.com/Elthiero) | thierrydonambi@gmail.com |
-| Alain Gaye | [@alaingaye](https://github.com/alaingaye) | via GitHub |
+| Alain Gaye | [@alaingaye](https://github.com/alaingaye) | lucienallaingaye@gmail.com |
 
 ## Contributing
 
